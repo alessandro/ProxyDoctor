@@ -34,7 +34,7 @@ Results & Reporting (core/check)
 core/
 ├── check/              ✅ Type definitions (CheckResult, Adapter interface)
 ├── engine/             ✅ Orchestration (Registry, DAG, Orchestrator)
-├── adapters/           ✅ Proxy implementations (Direct, HTTP, SOCKS)
+├── adapters/           ⚠️ Direct + HTTP/HTTPS proxy implemented; SOCKS4/SOCKS5 are stubs (not yet implemented)
 ├── checks/
 │   └── public_ip/      ✅ Public IP check (working)
 │       └── check.go    → implements Checker interface
@@ -44,10 +44,10 @@ cmd/
 ├── cli/                ✅ CLI application (Cobra + Viper)
 │   ├── commands/       ✅ diagnose, list-checks, version
 │   └── main.go         ✅ CLI entry point
-└── server/             ✅ HTTP server (stdlib only)
-    └── main.go         → /api/check/public-ip endpoint
+└── server/             ⚠️ HTTP server (stdlib only) — NOT wired to core/, standalone placeholder
+    └── main.go         → /api/check/public-ip endpoint only, no page served at "/"
 
-gui/                   📦 Tauri/React (archived, optional)
+gui/                   📦 Tauri/React (archived, optional, not started)
 ```
 
 ## Key Design Decisions

@@ -7,27 +7,42 @@
 ✅ **Complete:**
 - Core engine (check registry, dependency DAG, orchestrator)
 - CLI with diagnose and list-checks commands
-- HTTP server with public IP endpoint
+- HTTP/HTTPS proxy support in `diagnose --proxy` (fixed: was previously ignoring the flag entirely)
 - Unit tests (6/6 passing, 100% engine coverage)
 - Documentation (README, ARCHITECTURE, this file)
 
+⚠️ **Incomplete / misleading in earlier docs:**
+- HTTP server (`cmd/server`) exists but is **not wired to the core engine** — it's a separate minimal placeholder with one endpoint (`/api/check/public-ip`) and no web page at `/`
+- SOCKS4/SOCKS5 adapters are stubs (`not yet implemented`), even though the CLI flag accepts them
+- `--export json` / `--export markdown` are TODO stubs; only `text` output works
+
 ## Immediate Next Steps (v0.2.0)
 
-1. **Add more checks** (1-2 weeks)
+1. **Implement SOCKS4/SOCKS5 adapters** (2-4 days)
+   - `core/adapters/socks.go`: `ExecuteHTTPRequest` currently returns `not yet implemented` for both
+   - Needed before `--proxy-type socks4/socks5` can actually be used
+
+2. **Wire `cmd/server` to the core engine** (2-3 days)
+   - Currently it bypasses `core/` entirely and hardcodes a direct request to ipify/icanhazip
+   - Should build a `DiagnosisOrchestrator` the same way `cmd/cli/commands/diagnose.go` does, and expose it over HTTP
+   - Only after this is done does a browser-based GUI make sense
+
+3. **Add more checks** (1-2 weeks)
    - Implement DNS leak detection (`core/checks/dns_leak/check.go`)
    - Implement WebRTC leak detection (`core/checks/webrtc_leak/check.go`)
    - Add TLS/certificate validation checks
    - Update CLI to `diagnose --check dns_leak --proxy http://localhost:8080`
 
-2. **CLI improvements** (3-5 days)
-   - Add `--format json|text|csv` output flag
+4. **CLI improvements** (3-5 days)
+   - Implement `--export json` and `--export markdown` (currently TODO stubs)
    - Add `--timeout` parameter for diagnosis
    - Improve error messages and logging
 
-3. **HTTP server enhancements** (3-5 days)
+5. **HTTP server enhancements** (3-5 days)
    - Add `/api/checks` endpoint (list available checks)
    - Add `/api/diagnose` endpoint (run full diagnosis via HTTP)
    - Add CORS headers for GUI integration
+   - Serve a minimal HTML page at `/` (there currently is none — hitting it 404s)
 
 ## Medium-term (v0.3.0 - v1.0)
 

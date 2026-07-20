@@ -39,10 +39,13 @@ ProxyDoctor is a CLI-first tool to:
 **v0.1.0 (Alpha)**
 - ✅ Core engine with check registry and dependency DAG
 - ✅ CLI with diagnose and list-checks commands
-- ✅ HTTP server for simple public IP checks
+- ✅ HTTP/HTTPS proxy support in `diagnose --proxy` (fixed: URL is now actually parsed, was previously hardcoded)
+- 🔲 SOCKS4/SOCKS5 proxy support — flag exists but adapters are not implemented yet (`not yet implemented` error)
+- ⚠️ HTTP server (`cmd/server`) — minimal placeholder, **not connected to the core engine**. Only exposes `/api/check/public-ip` via a hardcoded direct request. Does not run real diagnoses and does not serve any page on `/`.
+- 🔲 Web GUI — not implemented. There is no HTML page served at `http://localhost:8080`; hitting `/` returns 404. Only the JSON endpoint above exists.
 - ✅ Unit tests (6 passing tests, 100% coverage of engine)
-- 🚧 GUI (simple web interface, see below)
-- 🔲 Plugin system (scaffolding in place)
+- 🔲 Plugin system (scaffolding in place, not functional)
+- 🔲 `--export json` / `--export markdown` — flags exist but formatters are unimplemented (TODO stubs)
 
 ## Requirements
 
@@ -65,15 +68,20 @@ This script will:
 - Run all tests (6 passing tests ✅)
 - Build CLI and server binaries
 
-### Try the Web GUI (Simplest)
+### Try the HTTP API (no GUI yet)
+
+There is currently no web page — only a single JSON endpoint. `http://localhost:8080/` will 404.
 
 ```bash
 # Start the server
 ./run.sh server
 
-# Open in browser
-open http://localhost:8080
+# In another terminal, hit the actual endpoint (note the /api/... path)
+curl http://localhost:8080/api/check/public-ip
+# Returns: {"ip":"1.2.3.4"}
 ```
+
+Note: this server does **not** use the core engine — it's a separate, minimal placeholder. Real diagnoses (with proxy support, multiple checks, etc.) currently only work via the CLI below.
 
 ### Use the CLI
 
@@ -84,8 +92,11 @@ open http://localhost:8080
 # List available checks
 ./run.sh cli list-checks
 
-# Run diagnostics
-./run.sh cli diagnose
+# Run diagnostics (--url is required)
+./run.sh cli diagnose --url https://example.com
+
+# Run diagnostics through an HTTP proxy
+./run.sh cli diagnose --url https://example.com --proxy http://127.0.0.1:3128 --proxy-type http
 ```
 
 ### Run the Server
@@ -135,15 +146,9 @@ What the main files do (very short)
 - `ARCHITECTURE.md` — minimal architecture diagram.
 - `VERSION`, `CHANGELOG.md`, `NEXT_STEPS.md` — versioning and high-level next steps.
 
-Start testing now
-- You said Go is installed — run `go test ./...` and paste the output here (or the failing tests). I will help fix any test failures.
+## Known Issues / Limitations
 
-If all tests pass, do:
-
-```bash
-go build -o bin/proxydoctor ./cmd/cli
-go run ./cmd/server    # in another terminal
-curl http://localhost:8080/api/check/public-ip
-```
-
-Want me to add a fetch example in the GUI so it calls the server automatically? Reply `yes` and I'll add it.
+- `cmd/server` is disconnected from `core/` — it's a standalone placeholder, not the real diagnosis engine exposed over HTTP.
+- SOCKS4/SOCKS5 proxy types are accepted by the CLI but the underlying adapters (`core/adapters/socks.go`) are stubs that return `not yet implemented`.
+- `--export json` and `--export markdown` are not implemented yet (only `text` output works).
+- Only one check (`public_ip`) is implemented; all others under `core/checks/` in `ARCHITECTURE.md` are planned, not built.
