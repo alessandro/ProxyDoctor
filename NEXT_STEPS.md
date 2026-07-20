@@ -8,41 +8,35 @@
 - Core engine (check registry, dependency DAG, orchestrator)
 - CLI with diagnose and list-checks commands
 - HTTP/HTTPS proxy support in `diagnose --proxy` (fixed: was previously ignoring the flag entirely)
+- HTTP server wired to the core engine, with a web GUI at `/` and `/api/checks`, `/api/diagnose` JSON endpoints
 - Unit tests (6/6 passing, 100% engine coverage)
 - Documentation (README, ARCHITECTURE, this file)
 
-⚠️ **Incomplete / misleading in earlier docs:**
-- HTTP server (`cmd/server`) exists but is **not wired to the core engine** — it's a separate minimal placeholder with one endpoint (`/api/check/public-ip`) and no web page at `/`
-- SOCKS4/SOCKS5 adapters are stubs (`not yet implemented`), even though the CLI flag accepts them
-- `--export json` / `--export markdown` are TODO stubs; only `text` output works
+⚠️ **Incomplete / remaining gaps:**
+- SOCKS4/SOCKS5 adapters are stubs (`not yet implemented`), even though the CLI flag and GUI dropdown accept them
+- `--export json` / `--export markdown` are TODO stubs; only `text` output works in the CLI (the API/GUI always returns full JSON)
 
 ## Immediate Next Steps (v0.2.0)
 
 1. **Implement SOCKS4/SOCKS5 adapters** (2-4 days)
    - `core/adapters/socks.go`: `ExecuteHTTPRequest` currently returns `not yet implemented` for both
-   - Needed before `--proxy-type socks4/socks5` can actually be used
+   - Needed before `--proxy-type socks4/socks5` can actually be used, from the CLI or the GUI
 
-2. **Wire `cmd/server` to the core engine** (2-3 days)
-   - Currently it bypasses `core/` entirely and hardcodes a direct request to ipify/icanhazip
-   - Should build a `DiagnosisOrchestrator` the same way `cmd/cli/commands/diagnose.go` does, and expose it over HTTP
-   - Only after this is done does a browser-based GUI make sense
-
-3. **Add more checks** (1-2 weeks)
+2. **Add more checks** (1-2 weeks)
    - Implement DNS leak detection (`core/checks/dns_leak/check.go`)
    - Implement WebRTC leak detection (`core/checks/webrtc_leak/check.go`)
    - Add TLS/certificate validation checks
-   - Update CLI to `diagnose --check dns_leak --proxy http://localhost:8080`
+   - Register them in both `cmd/cli/commands/diagnose.go` and `cmd/server/main.go`'s `newRegistry()` — currently only `public_ip` is registered in either
 
-4. **CLI improvements** (3-5 days)
+3. **CLI improvements** (3-5 days)
    - Implement `--export json` and `--export markdown` (currently TODO stubs)
    - Add `--timeout` parameter for diagnosis
    - Improve error messages and logging
 
-5. **HTTP server enhancements** (3-5 days)
-   - Add `/api/checks` endpoint (list available checks)
-   - Add `/api/diagnose` endpoint (run full diagnosis via HTTP)
-   - Add CORS headers for GUI integration
-   - Serve a minimal HTML page at `/` (there currently is none — hitting it 404s)
+4. **GUI/API enhancements** (3-5 days)
+   - Show per-check progress instead of waiting for the full report
+   - Add a "compare direct vs proxy" toggle in the form
+   - Persist recent diagnosis results client-side (session only, no backend storage)
 
 ## Medium-term (v0.3.0 - v1.0)
 

@@ -44,10 +44,10 @@ cmd/
 ├── cli/                ✅ CLI application (Cobra + Viper)
 │   ├── commands/       ✅ diagnose, list-checks, version
 │   └── main.go         ✅ CLI entry point
-└── server/             ⚠️ HTTP server (stdlib only) — NOT wired to core/, standalone placeholder
-    └── main.go         → /api/check/public-ip endpoint only, no page served at "/"
+└── server/             ✅ HTTP server (stdlib only) — wired to core/, serves web GUI + JSON API
+    └── main.go         → "/" (GUI), /api/checks, /api/diagnose
 
-gui/                   📦 Tauri/React (archived, optional, not started)
+gui/                   📦 Tauri/React (archived, superseded by the built-in web GUI in cmd/server)
 ```
 
 ## Key Design Decisions

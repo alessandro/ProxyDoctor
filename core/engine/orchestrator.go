@@ -18,23 +18,23 @@ type DiagnosisRequest struct {
 
 // DiagnosisReport represents the final output report
 type DiagnosisReport struct {
-	ID                string
-	RequestMetadata   RequestMetadata
-	Results           []check.CheckResult
-	ExecutionTime     time.Duration
-	ChecksExecuted    int
-	ChecksFailed      int
-	CriticalFindings  int
-	WarningFindings   int
+	ID                string               `json:"id"`
+	RequestMetadata   RequestMetadata      `json:"request_metadata"`
+	Results           []check.CheckResult  `json:"results"`
+	ExecutionTime     time.Duration        `json:"execution_time"`
+	ChecksExecuted    int                  `json:"checks_executed"`
+	ChecksFailed      int                  `json:"checks_failed"`
+	CriticalFindings  int                  `json:"critical_findings"`
+	WarningFindings   int                  `json:"warning_findings"`
 }
 
 // RequestMetadata contains information about the diagnosis request
 type RequestMetadata struct {
-	URL              string
-	ProxyType        check.ProxyType
-	StartedAt        time.Time
-	CompletedAt      time.Time
-	UserAgent        string
+	URL              string          `json:"url"`
+	ProxyType        check.ProxyType `json:"proxy_type"`
+	StartedAt        time.Time       `json:"started_at"`
+	CompletedAt      time.Time       `json:"completed_at"`
+	UserAgent        string          `json:"user_agent,omitempty"`
 }
 
 // DiagnosisOrchestrator orchestrates the execution of checks

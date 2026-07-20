@@ -4,7 +4,7 @@
 
 [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 
-> **Built with Copilot Auto Mode** — This project was simplified, tested, and documented with GitHub Copilot.
+> **Built with a big contribution of Copilot Auto Mode and Claude Sonnet 5** — This project was developed and documented with GitHub Copilot and Claude.
 
 ## 🤔 Why ProxyDoctor?
 
@@ -39,10 +39,10 @@ ProxyDoctor is a CLI-first tool to:
 **v0.1.0 (Alpha)**
 - ✅ Core engine with check registry and dependency DAG
 - ✅ CLI with diagnose and list-checks commands
-- ✅ HTTP/HTTPS proxy support in `diagnose --proxy` (fixed: URL is now actually parsed, was previously hardcoded)
-- 🔲 SOCKS4/SOCKS5 proxy support — flag exists but adapters are not implemented yet (`not yet implemented` error)
-- ⚠️ HTTP server (`cmd/server`) — minimal placeholder, **not connected to the core engine**. Only exposes `/api/check/public-ip` via a hardcoded direct request. Does not run real diagnoses and does not serve any page on `/`.
-- 🔲 Web GUI — not implemented. There is no HTML page served at `http://localhost:8080`; hitting `/` returns 404. Only the JSON endpoint above exists.
+- ✅ HTTP/HTTPS proxy support in `diagnose --proxy` (URL is properly parsed: scheme, host, port, credentials)
+- ✅ HTTP server (`cmd/server`) — now wired to the real core engine (`core/engine.DiagnosisOrchestrator`), same code path as the CLI
+- ✅ Web GUI — single-page form at `http://localhost:8080/`, runs a real diagnosis via `POST /api/diagnose` and renders results
+- 🔲 SOCKS4/SOCKS5 proxy support — flag/option exists but adapters are not implemented yet (`not yet implemented` error)
 - ✅ Unit tests (6 passing tests, 100% coverage of engine)
 - 🔲 Plugin system (scaffolding in place, not functional)
 - 🔲 `--export json` / `--export markdown` — flags exist but formatters are unimplemented (TODO stubs)
@@ -68,20 +68,29 @@ This script will:
 - Run all tests (6 passing tests ✅)
 - Build CLI and server binaries
 
-### Try the HTTP API (no GUI yet)
-
-There is currently no web page — only a single JSON endpoint. `http://localhost:8080/` will 404.
+### Try the Web GUI
 
 ```bash
 # Start the server
 ./run.sh server
 
-# In another terminal, hit the actual endpoint (note the /api/... path)
-curl http://localhost:8080/api/check/public-ip
-# Returns: {"ip":"1.2.3.4"}
+# Open in browser
+open http://localhost:8080
 ```
 
-Note: this server does **not** use the core engine — it's a separate, minimal placeholder. Real diagnoses (with proxy support, multiple checks, etc.) currently only work via the CLI below.
+Fill in the URL (and optionally a proxy + proxy type), hit "Run diagnosis" — it runs the same `core/engine.DiagnosisOrchestrator` the CLI uses and renders the results as cards.
+
+Two JSON endpoints back the GUI, and can be called directly:
+
+```bash
+# List available checks
+curl http://localhost:8080/api/checks
+
+# Run a diagnosis
+curl -X POST http://localhost:8080/api/diagnose \
+  -H "Content-Type: application/json" \
+  -d '{"url":"https://example.com","proxy":"http://127.0.0.1:3128","proxy_type":"http"}'
+```
 
 ### Use the CLI
 
@@ -140,7 +149,7 @@ ProxyDoctor/
 
 What the main files do (very short)
 - `cmd/cli/` — CLI entrypoint and commands (diagnose, list, version).
-- `cmd/server/` — tiny HTTP server that runs a single check (`public_ip`) and returns JSON.
+- `cmd/server/` — tiny HTTP server (stdlib only) wired to the core engine; serves the web GUI at `/` and the `/api/checks`, `/api/diagnose` JSON endpoints.
 - `core/` — engine, adapters and checks implementations (testable packages).
 - `core/checks/public_ip/` — example check used by the server.
 - `ARCHITECTURE.md` — minimal architecture diagram.
@@ -148,7 +157,6 @@ What the main files do (very short)
 
 ## Known Issues / Limitations
 
-- `cmd/server` is disconnected from `core/` — it's a standalone placeholder, not the real diagnosis engine exposed over HTTP.
-- SOCKS4/SOCKS5 proxy types are accepted by the CLI but the underlying adapters (`core/adapters/socks.go`) are stubs that return `not yet implemented`.
-- `--export json` and `--export markdown` are not implemented yet (only `text` output works).
+- SOCKS4/SOCKS5 proxy types are accepted by the CLI and GUI but the underlying adapters (`core/adapters/socks.go`) are stubs that return `not yet implemented`.
+- `--export json` and `--export markdown` are not implemented yet (only `text` output works in the CLI; the GUI/API always returns full JSON).
 - Only one check (`public_ip`) is implemented; all others under `core/checks/` in `ARCHITECTURE.md` are planned, not built.
