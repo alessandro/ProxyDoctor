@@ -1,0 +1,53 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.so.*
+*.dylib
+/bin
+/dist
+
+# Build outputs
+build/
+out/
+*.o
+*.a
+*.test
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.iml
+
+# Go
+vendor/
+go.sum
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Temp files
+tmp/
+temp/
+*.tmp
+
+# Coverage
+*.cover
+coverage.out
+coverage.html
+
+# Tauri
+cmd/gui/src-tauri/target
+cmd/gui/node_modules
+cmd/gui/dist
+cmd/gui/.next
+
+# CLI config
+config.local.yaml
