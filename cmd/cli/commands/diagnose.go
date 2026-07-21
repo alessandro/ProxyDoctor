@@ -1,7 +1,9 @@
 package commands
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -99,27 +101,40 @@ func runDiagnose(cmd *cobra.Command, args []string) error {
 	}
 
 	// Format and display results
-	formatResults(report, exportFmt)
+	if err := formatResults(report, exportFmt, output); err != nil {
+		fmt.Printf("❌ Failed to save output: %v\n", err)
+	} else if output != "" {
+		fmt.Printf("✅ Results saved to %s\n", output)
+	}
 
 	return nil
 }
 
-func formatResults(report *engine.DiagnosisReport, format string) {
+func formatResults(report *engine.DiagnosisReport, format string, outPath string) error {
+	var result string
 	switch format {
 	case "json":
-		formatJSON(report)
+		result = formatJSON(report)
 	case "text":
-		formatText(report)
-	case "markdown":
-		formatMarkdown(report)
+		result = formatText(report)
+	case "markdown", "md":
+		result = formatMarkdown(report)
 	default:
-		formatText(report)
+		result = formatText(report)
 	}
+
+	if outPath != "" {
+		return os.WriteFile(outPath, []byte(result), 0644)
+	}
+
+	fmt.Print(result)
+	return nil
 }
 
-func formatText(report *engine.DiagnosisReport) {
-	fmt.Printf("📊 Diagnosis Results\n")
-	fmt.Printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n")
+func formatText(report *engine.DiagnosisReport) string {
+	var out string
+	out += "📊 Diagnosis Results\n"
+	out += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
 
 	for i, result := range report.Results {
 		status := "✅"
@@ -129,24 +144,47 @@ func formatText(report *engine.DiagnosisReport) {
 			status = "⚠️"
 		}
 
-		fmt.Printf("%d. %s %s\n", i+1, status, result.ID)
-		fmt.Printf("   Status: %s | Severity: %s | Confidence: %.0f%%\n",
+		out += fmt.Sprintf("%d. %s %s\n", i+1, status, result.ID)
+		out += fmt.Sprintf("   Status: %s | Severity: %s | Confidence: %.0f%%\n",
 			result.Status, result.Severity, result.Confidence*100)
-		fmt.Printf("   %s\n\n", result.Explanation)
+		out += fmt.Sprintf("   %s\n\n", result.Explanation)
 	}
 
-	fmt.Printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
-	fmt.Printf("Checks Executed: %d | Failed: %d | Critical: %d\n",
+	out += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+	out += fmt.Sprintf("Checks Executed: %d | Failed: %d | Critical: %d\n",
 		report.ChecksExecuted, report.ChecksFailed, report.CriticalFindings)
-	fmt.Printf("Total Time: %s\n", report.ExecutionTime)
+	out += fmt.Sprintf("Total Time: %s\n", report.ExecutionTime)
+	return out
 }
 
-func formatJSON(report *engine.DiagnosisReport) {
-	// TODO: Implement JSON formatting
-	fmt.Println("JSON export not yet implemented")
+func formatJSON(report *engine.DiagnosisReport) string {
+	b, err := json.MarshalIndent(report, "", "  ")
+	if err != nil {
+		return fmt.Sprintf("{\"error\": \"%s\"}\n", err.Error())
+	}
+	return string(b) + "\n"
 }
 
-func formatMarkdown(report *engine.DiagnosisReport) {
-	// TODO: Implement Markdown formatting
-	fmt.Println("Markdown export not yet implemented")
+func formatMarkdown(report *engine.DiagnosisReport) string {
+	var out string
+	out += "# ProxyDoctor Diagnosis Report\n\n"
+	for i, result := range report.Results {
+		status := "✅"
+		if result.IsFailed() {
+			status = "❌"
+		} else if result.IsError() {
+			status = "⚠️"
+		}
+		out += fmt.Sprintf("## %d. %s %s\n\n", i+1, status, result.ID)
+		out += fmt.Sprintf("- **Status**: %s\n", result.Status)
+		out += fmt.Sprintf("- **Severity**: %s\n", result.Severity)
+		out += fmt.Sprintf("- **Confidence**: %.0f%%\n\n", result.Confidence*100)
+		out += fmt.Sprintf("%s\n\n", result.Explanation)
+	}
+	out += "---\n\n"
+	out += fmt.Sprintf("- **Checks Executed**: %d\n", report.ChecksExecuted)
+	out += fmt.Sprintf("- **Failed**: %d\n", report.ChecksFailed)
+	out += fmt.Sprintf("- **Critical**: %d\n", report.CriticalFindings)
+	out += fmt.Sprintf("- **Total Time**: %s\n", report.ExecutionTime)
+	return out
 }
