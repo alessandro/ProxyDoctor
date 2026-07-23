@@ -4,7 +4,9 @@
 
 [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 
-![Logo](images/proxydoctor-logo.png)
+<p align="center">
+  <img src="images/proxydoctor-logo.png" alt="ProxyDoctor Logo" width="150">
+</p>
 
 > **Built with a big contribution of Copilot Auto Mode and Claude Sonnet 5** — This project was developed and documented with GitHub Copilot and Claude.
 
