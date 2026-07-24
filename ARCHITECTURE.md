@@ -19,10 +19,11 @@ Network Adapters (core/adapters)
     └─ Adapter factory for dynamic creation
     ↓
 Checks (core/checks/*)
-    ├─ public_ip — fetch and return public IP
-    ├─ dns_leak — (scaffolding)
-    ├─ webrtc_leak — (scaffolding)
-    └─ ... (more checks to come)
+    ├─ public_ip — detect public IP via ipify/icanhazip/ifconfig
+    ├─ dns_resolve — resolve hostname to IPs through current connection
+    ├─ tls_certificate — validate TLS cert, cipher suite, TLS version
+    ├─ port_connectivity — test TCP ports (80, 443, 8080, 8443)
+    └─ ... (more checks planned: dns_leak, webrtc_leak, geolocation, etc.)
     ↓
 Results & Reporting (core/check)
     └─ CheckResult — fluent builder, status, confidence, evidence
@@ -36,9 +37,12 @@ core/
 ├── engine/             ✅ Orchestration (Registry, DAG, Orchestrator)
 ├── adapters/           ✅ Direct + HTTP/HTTPS/SOCKS4/SOCKS5 proxy adapters
 ├── checks/
-│   └── public_ip/      ✅ Public IP check (working)
-│       └── check.go    → implements Checker interface
-└── utils/              → helper functions
+│   ├── public_ip/      ✅ Public IP check (ipify, icanhazip, ifconfig.me)
+│   ├── dns_resolve/    ✅ DNS resolution through current connection
+│   ├── tls_cert/       ✅ TLS certificate validation, cipher suite, version
+│   ├── port_scan/      ✅ TCP port connectivity (80, 443, 8080, 8443)
+│   └── ... (planned: dns_leak, webrtc_leak, geolocation, etc.)
+└── utils/              ✅ Shared helpers (proxyconfig.go)
 
 cmd/
 ├── cli/                ✅ CLI application (Cobra + Viper)
