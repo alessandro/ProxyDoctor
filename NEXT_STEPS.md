@@ -1,39 +1,43 @@
 # Next Steps — Development Roadmap
 
-> **Built with Copilot Auto Mode** — This roadmap was created with AI assistance for clarity and feasibility.
+> **Built with AI assistance** — Contributions from GitHub Copilot, OpenCode (free open-source models), and Gemini Pro.
 
-## Current Status (v0.1.0 Alpha)
+## Current Status (v0.2.0 Alpha)
 
 ✅ **Complete:**
 - Core engine (check registry, dependency DAG, orchestrator)
 - CLI with diagnose and list-checks commands
 - HTTP/HTTPS proxy support in `diagnose --proxy` (fixed: was previously ignoring the flag entirely)
+- **SOCKS4/SOCKS5 proxy support** — full protocol implementations in `core/adapters/socks.go`
+  - SOCKS4/4a: custom dialer with domain name support via `0.0.0.1` extension
+  - SOCKS5: `golang.org/x/net/proxy` with manual fallback, IPv4/IPv6/domain targets, username/password auth (RFC 1929)
+  - All `NetworkAdapter` methods implemented: HTTP requests, redirects, DNS, port testing, TLS detection, public IP
 - HTTP server wired to the core engine, with a web GUI at `/` and `/api/checks`, `/api/diagnose` JSON endpoints
-- Unit tests (6/6 passing, 100% engine coverage)
+- `--export json` and `--export markdown` (working)
+- Unit tests (6/6 passing, engine coverage)
 - Documentation (README, ARCHITECTURE, this file)
 
 ⚠️ **Incomplete / remaining gaps:**
-- SOCKS4/SOCKS5 adapters are stubs (`not yet implemented`), even though the CLI flag and GUI dropdown accept them
-- `--export json` / `--export markdown` are TODO stubs; only `text` output works in the CLI (the API/GUI always returns full JSON)
+- Only one check (`public_ip`) is registered; DNS leak, WebRTC leak, TLS checks not yet implemented
+- `--export html` flag accepted but falls back to text (formatter not implemented)
+- `--compare` flag declared but not wired into execution
 
 ## Immediate Next Steps (v0.2.0)
 
-1. **Implement SOCKS4/SOCKS5 adapters** (2-4 days)
-   - `core/adapters/socks.go`: `ExecuteHTTPRequest` currently returns `not yet implemented` for both
-   - Needed before `--proxy-type socks4/socks5` can actually be used, from the CLI or the GUI
-
-2. **Add more checks** (1-2 weeks)
+1. **Add more checks** (1-2 weeks)
    - Implement DNS leak detection (`core/checks/dns_leak/check.go`)
    - Implement WebRTC leak detection (`core/checks/webrtc_leak/check.go`)
    - Add TLS/certificate validation checks
    - Register them in both `cmd/cli/commands/diagnose.go` and `cmd/server/main.go`'s `newRegistry()` — currently only `public_ip` is registered in either
 
-3. **CLI improvements** (3-5 days)
-   - Implement `--export json` and `--export markdown` (currently TODO stubs)
-   - Add `--timeout` parameter for diagnosis
+2. **CLI improvements** (3-5 days)
+   - Implement `--export html` formatter
+   - Add `--timeout` parameter for diagnosis (currently hardcoded to 30s)
+   - Add `--checks` flag to select specific checks
+   - Wire the `--compare` flag (run against direct + proxy, show diff)
    - Improve error messages and logging
 
-4. **GUI/API enhancements** (3-5 days)
+3. **GUI/API enhancements** (3-5 days)
    - Show per-check progress instead of waiting for the full report
    - Add a "compare direct vs proxy" toggle in the form
    - Persist recent diagnosis results client-side (session only, no backend storage)
@@ -81,7 +85,7 @@ go build -o bin/proxydoctor-server ./cmd/server
 ./run.sh server
 
 # Tag releases
-git tag -a v0.2.0 -m "v0.2.0: DNS and WebRTC checks"
+git tag -a v0.2.0 -m "v0.2.0: SOCKS4/SOCKS5 proxy support"
 git push --tags
 ```
 
@@ -95,21 +99,16 @@ Before tagging a new version:
 - [ ] Update `README.md` if needed
 - [ ] Tag with `git tag -a vX.Y.Z -m "vX.Y.Z: description"`
 - [ ] Push tags with `git push --tags`
-   - Publish binaries or provide build instructions when ready.
 
 Brief description of files left in the repository
 
 - `README.md` — short project overview and quick start commands.
-- `ARCHITECTURE.md` — very short architecture diagram and what to keep testable.
+- `ARCHITECTURE.md` — architecture diagram, package structure, and what to keep testable.
 - `VERSION` — current project version (simple single-line file).
 - `CHANGELOG.md` — release notes template.
 - `go.mod` — Go module and dependency list.
 - `cmd/cli/` — CLI entry point and commands. This is where `go build ./cmd/cli` produces the CLI binary.
 - `core/` — core engine, adapters and check implementations. Testable package with unit tests under `core/test`.
-
-What I moved to `archived/`
-
-- Large docs, optional GUI code, CI/Docker artifacts, plugins and example folders were moved into `archived/` to keep the repo minimal and reversible.
 
 How to run tests locally
 
@@ -123,8 +122,3 @@ go build -o bin/proxydoctor ./cmd/cli
 # run CLI help
 ./bin/proxydoctor diagnose --help
 ```
-
-If you want, I can now:
-- (A) Add the small HTTP wrapper to `cmd/server` (1 file) and the route to run a public_ip check.
-- (B) Commit and tag a `v0.1.0` release.
-- (C) Reintroduce a minimal CI workflow once tests are passing.

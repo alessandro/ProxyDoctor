@@ -1,6 +1,6 @@
 # ProxyDoctor — Architecture
 
-> **Built with Copilot Auto Mode** — Simplified and tested with GitHub Copilot.
+> **Built with AI assistance** — Contributions from GitHub Copilot, OpenCode (free open-source models), and Gemini Pro.
 
 ## Overview
 
@@ -34,7 +34,7 @@ Results & Reporting (core/check)
 core/
 ├── check/              ✅ Type definitions (CheckResult, Adapter interface)
 ├── engine/             ✅ Orchestration (Registry, DAG, Orchestrator)
-├── adapters/           ⚠️ Direct + HTTP/HTTPS proxy implemented; SOCKS4/SOCKS5 are stubs (not yet implemented)
+├── adapters/           ✅ Direct + HTTP/HTTPS/SOCKS4/SOCKS5 proxy adapters
 ├── checks/
 │   └── public_ip/      ✅ Public IP check (working)
 │       └── check.go    → implements Checker interface

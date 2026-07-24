@@ -8,7 +8,10 @@
   <img src="images/proxydoctor-logo.png" alt="ProxyDoctor Logo" width="150">
 </p>
 
-> **Built with a big contribution of Copilot Auto Mode and Claude Sonnet 5** — This project was developed and documented with GitHub Copilot and Claude.
+> **Built with AI assistance** — This project was developed and documented with contributions from:
+> - **GitHub Copilot** (Auto Mode, inline suggestions)
+> - **OpenCode** with free open-source models (big-pickle / opencode models)
+> - **Google Gemini Pro** (architecture design, code review)
 
 ## 🤔 Why ProxyDoctor?
 
@@ -40,16 +43,17 @@ ProxyDoctor is a CLI-first tool to:
 
 ## Project Status
 
-**v0.1.0 (Alpha)**
+**v0.2.0 (Alpha)**
 - ✅ Core engine with check registry and dependency DAG
 - ✅ CLI with diagnose and list-checks commands
 - ✅ HTTP/HTTPS proxy support in `diagnose --proxy` (URL is properly parsed: scheme, host, port, credentials)
-- ✅ HTTP server (`cmd/server`) — now wired to the real core engine (`core/engine.DiagnosisOrchestrator`), same code path as the CLI
+- ✅ SOCKS4/SOCKS5 proxy support (full protocol implementation, SOCKS4a domain support, SOCKS5 auth per RFC 1929)
+- ✅ HTTP server (`cmd/server`) — wired to the core engine (`core/engine.DiagnosisOrchestrator`), same code path as the CLI
 - ✅ Web GUI — single-page form at `http://localhost:8080/`, runs a real diagnosis via `POST /api/diagnose` and renders results
-- 🔲 SOCKS4/SOCKS5 proxy support — flag/option exists but adapters are not implemented yet (`not yet implemented` error)
-- ✅ Unit tests (6 passing tests, 100% coverage of engine)
+- ✅ Unit tests (6 passing tests, engine coverage)
+- ✅ `--export json` and `--export markdown` (working)
+- 🔲 More checks (only `public_ip` implemented; DNS leak, WebRTC leak, TLS checks planned)
 - 🔲 Plugin system (scaffolding in place, not functional)
-- 🔲 `--export json` / `--export markdown` — flags exist but formatters are unimplemented (TODO stubs)
 
 ## Requirements
 
@@ -110,6 +114,12 @@ curl -X POST http://localhost:8080/api/diagnose \
 
 # Run diagnostics through an HTTP proxy
 ./run.sh cli diagnose --url https://example.com --proxy http://127.0.0.1:3128 --proxy-type http
+
+# Run diagnostics through a SOCKS5 proxy
+./run.sh cli diagnose --url https://example.com --proxy socks5://127.0.0.1:1080 --proxy-type socks5
+
+# Export results as JSON
+./run.sh cli diagnose --url https://example.com --export json --output report.json
 ```
 
 ### Run the Server
@@ -161,6 +171,6 @@ What the main files do (very short)
 
 ## Known Issues / Limitations
 
-- SOCKS4/SOCKS5 proxy types are accepted by the CLI and GUI but the underlying adapters (`core/adapters/socks.go`) are stubs that return `not yet implemented`.
-- `--export json` and `--export markdown` are not implemented yet (only `text` output works in the CLI; the GUI/API always returns full JSON).
 - Only one check (`public_ip`) is implemented; all others under `core/checks/` in `ARCHITECTURE.md` are planned, not built.
+- `--export html` flag is accepted but silently falls back to text output (html formatter not implemented).
+- `--compare` flag is declared but not yet wired into the diagnosis execution.
