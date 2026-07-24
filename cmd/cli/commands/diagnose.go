@@ -10,7 +10,10 @@ import (
 
 	"github.com/francomano/proxydoctor/core/adapters"
 	"github.com/francomano/proxydoctor/core/check"
+	dnsresolve "github.com/francomano/proxydoctor/core/checks/dns_resolve"
+	portscan "github.com/francomano/proxydoctor/core/checks/port_scan"
 	publicip "github.com/francomano/proxydoctor/core/checks/public_ip"
+	tlscert "github.com/francomano/proxydoctor/core/checks/tls_cert"
 	"github.com/francomano/proxydoctor/core/engine"
 	"github.com/francomano/proxydoctor/core/utils"
 )
@@ -72,7 +75,9 @@ func runDiagnose(cmd *cobra.Command, args []string) error {
 	// Create registry and register checks
 	registry := engine.NewCheckRegistry()
 	registry.Register(publicip.NewPublicIPCheck())
-	// TODO: Add more checks as they're implemented
+	registry.Register(dnsresolve.NewDNSResolveCheck())
+	registry.Register(tlscert.NewTLSCertCheck())
+	registry.Register(portscan.NewPortScanCheck())
 
 	// Create adapter factory
 	adapterFactory := adapters.NewAdapterFactory()

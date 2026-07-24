@@ -5,7 +5,10 @@ import (
 
 	"github.com/spf13/cobra"
 
+	dnsresolve "github.com/francomano/proxydoctor/core/checks/dns_resolve"
+	portscan "github.com/francomano/proxydoctor/core/checks/port_scan"
 	publicip "github.com/francomano/proxydoctor/core/checks/public_ip"
+	tlscert "github.com/francomano/proxydoctor/core/checks/tls_cert"
 	"github.com/francomano/proxydoctor/core/engine"
 )
 
@@ -16,7 +19,9 @@ var listChecksCmd = &cobra.Command{
 		// Create registry with all checks
 		registry := engine.NewCheckRegistry()
 		registry.Register(publicip.NewPublicIPCheck())
-		// TODO: Register more checks
+		registry.Register(dnsresolve.NewDNSResolveCheck())
+		registry.Register(tlscert.NewTLSCertCheck())
+		registry.Register(portscan.NewPortScanCheck())
 
 		checks := registry.ListChecks()
 

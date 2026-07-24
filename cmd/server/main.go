@@ -8,7 +8,10 @@ import (
 
 	"github.com/francomano/proxydoctor/core/adapters"
 	"github.com/francomano/proxydoctor/core/engine"
+	dnsresolve "github.com/francomano/proxydoctor/core/checks/dns_resolve"
+	portscan "github.com/francomano/proxydoctor/core/checks/port_scan"
 	publicip "github.com/francomano/proxydoctor/core/checks/public_ip"
+	tlscert "github.com/francomano/proxydoctor/core/checks/tls_cert"
 	"github.com/francomano/proxydoctor/core/utils"
 )
 
@@ -18,6 +21,9 @@ import (
 func newRegistry() *engine.CheckRegistry {
 	registry := engine.NewCheckRegistry()
 	registry.Register(publicip.NewPublicIPCheck())
+	registry.Register(dnsresolve.NewDNSResolveCheck())
+	registry.Register(tlscert.NewTLSCertCheck())
+	registry.Register(portscan.NewPortScanCheck())
 	return registry
 }
 
@@ -234,20 +240,23 @@ const indexHTML = `<!DOCTYPE html>
     </div>
     <div class="row">
       <div>
-        <label for="proxy">Proxy (optional, include scheme)</label>
-        <input id="proxy" name="proxy" type="text" placeholder="http://host:port" />
+        <label for="proxy">Proxy (optional)</label>
+        <input id="proxy" name="proxy" type="text" placeholder="host:port or scheme://host:port" />
       </div>
       <div>
         <label for="proxy_type">Proxy type</label>
         <select id="proxy_type" name="proxy_type">
-          <option value="auto">auto</option>
-          <option value="http">http</option>
-          <option value="https">https</option>
-          <option value="socks4">socks4</option>
-          <option value="socks5">socks5</option>
+          <option value="auto">auto (from scheme)</option>
+          <option value="http">HTTP</option>
+          <option value="https">HTTPS</option>
+          <option value="socks4">SOCKS4</option>
+          <option value="socks5">SOCKS5</option>
         </select>
       </div>
     </div>
+    <p style="font-size:0.75rem;color:#6b7280;margin:0;">
+      Proxy URL examples: <code>socks5://77.245.76.107:1080</code>, <code>http://proxy:3128</code>, or just <code>host:port</code> and select the type above.
+    </p>
     <button type="submit" id="submit-btn">Run diagnosis</button>
   </form>
 
