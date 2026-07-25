@@ -3,6 +3,7 @@ package commands
 import (
 	"encoding/json"
 	"fmt"
+	"html"
 	"os"
 	"time"
 
@@ -99,6 +100,22 @@ func runDiagnose(cmd *cobra.Command, args []string) error {
 	fmt.Printf("\n")
 
 	// Execute diagnosis
+	if compare {
+		comparisonReport, err := orchestrator.ExecuteComparison(diagRequest)
+		if err != nil {
+			fmt.Printf("❌ Comparison failed: %v\n", err)
+			return err
+		}
+
+		if err := formatComparisonResults(comparisonReport, exportFmt, output); err != nil {
+			fmt.Printf("❌ Failed to save output: %v\n", err)
+		} else if output != "" {
+			fmt.Printf("✅ Results saved to %s\n", output)
+		}
+
+		return nil
+	}
+
 	report, err := orchestrator.Execute(diagRequest)
 	if err != nil {
 		fmt.Printf("❌ Diagnosis failed: %v\n", err)
@@ -115,6 +132,29 @@ func runDiagnose(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+func formatComparisonResults(report *engine.ComparisonReport, format string, outPath string) error {
+	var result string
+	switch format {
+	case "json":
+		result = formatComparisonJSON(report)
+	case "text":
+		result = formatComparisonText(report)
+	case "markdown", "md":
+		result = formatComparisonMarkdown(report)
+	case "html":
+		result = formatComparisonHTML(report)
+	default:
+		result = formatComparisonText(report)
+	}
+
+	if outPath != "" {
+		return os.WriteFile(outPath, []byte(result), 0644)
+	}
+
+	fmt.Print(result)
+	return nil
+}
+
 func formatResults(report *engine.DiagnosisReport, format string, outPath string) error {
 	var result string
 	switch format {
@@ -124,6 +164,8 @@ func formatResults(report *engine.DiagnosisReport, format string, outPath string
 		result = formatText(report)
 	case "markdown", "md":
 		result = formatMarkdown(report)
+	case "html":
+		result = formatHTML(report)
 	default:
 		result = formatText(report)
 	}
@@ -170,6 +212,35 @@ func formatJSON(report *engine.DiagnosisReport) string {
 	return string(b) + "\n"
 }
 
+func formatComparisonJSON(report *engine.ComparisonReport) string {
+	b, err := json.MarshalIndent(report, "", "  ")
+	if err != nil {
+		return fmt.Sprintf("{\"error\": \"%s\"}\n", err.Error())
+	}
+	return string(b) + "\n"
+}
+
+func formatHTML(report *engine.DiagnosisReport) string {
+	var out string
+	out += "<!doctype html>\n<html><head><meta charset=\"utf-8\"><title>ProxyDoctor Diagnosis Report</title></head><body>\n"
+	out += "<h1>ProxyDoctor Diagnosis Report</h1>\n"
+	out += "<ol>\n"
+	for _, result := range report.Results {
+		out += fmt.Sprintf("<li><strong>%s</strong><br>Status: %s<br>Severity: %s<br>Confidence: %.0f%%<p>%s</p></li>\n",
+			html.EscapeString(result.ID),
+			html.EscapeString(string(result.Status)),
+			html.EscapeString(string(result.Severity)),
+			result.Confidence*100,
+			html.EscapeString(result.Explanation))
+	}
+	out += "</ol>\n"
+	out += fmt.Sprintf("<p>Checks Executed: %d | Failed: %d | Critical: %d</p>\n",
+		report.ChecksExecuted, report.ChecksFailed, report.CriticalFindings)
+	out += fmt.Sprintf("<p>Total Time: %s</p>\n", html.EscapeString(report.ExecutionTime.String()))
+	out += "</body></html>\n"
+	return out
+}
+
 func formatMarkdown(report *engine.DiagnosisReport) string {
 	var out string
 	out += "# ProxyDoctor Diagnosis Report\n\n"
@@ -192,4 +263,87 @@ func formatMarkdown(report *engine.DiagnosisReport) string {
 	out += fmt.Sprintf("- **Critical**: %d\n", report.CriticalFindings)
 	out += fmt.Sprintf("- **Total Time**: %s\n", report.ExecutionTime)
 	return out
+}
+
+func formatComparisonText(report *engine.ComparisonReport) string {
+	var out string
+	out += "📊 ProxyDoctor Comparison Results\n"
+	out += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+	out += "Direct Connection\n"
+	out += formatResultSummary(report.DirectReport)
+	out += "\nProxied Connection\n"
+	out += formatResultSummary(report.ProxyReport)
+	out += "\nDifferences\n"
+	if len(report.Differences) == 0 {
+		out += "   No differences detected.\n"
+	} else {
+		for _, diff := range report.Differences {
+			out += fmt.Sprintf("   - %s: %v → %v\n", diff.Summary, diff.DirectValue, diff.ProxyValue)
+		}
+	}
+	out += "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+	out += fmt.Sprintf("Total Time: %s\n", report.ExecutionTime)
+	return out
+}
+
+func formatComparisonMarkdown(report *engine.ComparisonReport) string {
+	var out string
+	out += "# ProxyDoctor Comparison Report\n\n"
+	out += "## Direct Connection\n\n"
+	out += formatMarkdownSummary(report.DirectReport)
+	out += "\n## Proxied Connection\n\n"
+	out += formatMarkdownSummary(report.ProxyReport)
+	out += "\n## Differences\n\n"
+	if len(report.Differences) == 0 {
+		out += "No differences detected.\n"
+	} else {
+		for _, diff := range report.Differences {
+			out += fmt.Sprintf("- **%s** `%s`: `%v` → `%v`\n", diff.CheckID, diff.Field, diff.DirectValue, diff.ProxyValue)
+		}
+	}
+	out += fmt.Sprintf("\n---\n\n- **Total Time**: %s\n", report.ExecutionTime)
+	return out
+}
+
+func formatComparisonHTML(report *engine.ComparisonReport) string {
+	var out string
+	out += "<!doctype html>\n<html><head><meta charset=\"utf-8\"><title>ProxyDoctor Comparison Report</title></head><body>\n"
+	out += "<h1>ProxyDoctor Comparison Report</h1>\n"
+	out += "<h2>Direct Connection</h2>\n"
+	out += formatHTMLSummary(report.DirectReport)
+	out += "<h2>Proxied Connection</h2>\n"
+	out += formatHTMLSummary(report.ProxyReport)
+	out += "<h2>Differences</h2>\n"
+	if len(report.Differences) == 0 {
+		out += "<p>No differences detected.</p>\n"
+	} else {
+		out += "<ul>\n"
+		for _, diff := range report.Differences {
+			out += fmt.Sprintf("<li><strong>%s</strong> %s: <code>%s</code> to <code>%s</code><br>%s</li>\n",
+				html.EscapeString(diff.CheckID),
+				html.EscapeString(diff.Field),
+				html.EscapeString(fmt.Sprint(diff.DirectValue)),
+				html.EscapeString(fmt.Sprint(diff.ProxyValue)),
+				html.EscapeString(diff.Summary))
+		}
+		out += "</ul>\n"
+	}
+	out += fmt.Sprintf("<p>Total Time: %s</p>\n", html.EscapeString(report.ExecutionTime.String()))
+	out += "</body></html>\n"
+	return out
+}
+
+func formatResultSummary(report *engine.DiagnosisReport) string {
+	return fmt.Sprintf("   Checks Executed: %d | Failed: %d | Critical: %d | Time: %s\n",
+		report.ChecksExecuted, report.ChecksFailed, report.CriticalFindings, report.ExecutionTime)
+}
+
+func formatMarkdownSummary(report *engine.DiagnosisReport) string {
+	return fmt.Sprintf("- **Checks Executed**: %d\n- **Failed**: %d\n- **Critical**: %d\n- **Total Time**: %s\n",
+		report.ChecksExecuted, report.ChecksFailed, report.CriticalFindings, report.ExecutionTime)
+}
+
+func formatHTMLSummary(report *engine.DiagnosisReport) string {
+	return fmt.Sprintf("<p>Checks Executed: %d | Failed: %d | Critical: %d | Time: %s</p>\n",
+		report.ChecksExecuted, report.ChecksFailed, report.CriticalFindings, html.EscapeString(report.ExecutionTime.String()))
 }

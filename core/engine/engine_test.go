@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -171,4 +172,137 @@ func TestExecutionContext(t *testing.T) {
 	if ctx.IsCancelled() {
 		t.Error("Should not be cancelled initially")
 	}
+}
+
+func TestExecuteComparisonRunsDirectAndProxyDiagnoses(t *testing.T) {
+	registry := NewCheckRegistry()
+	if err := registry.Register(proxyAwareCheck{}); err != nil {
+		t.Fatalf("Failed to register check: %v", err)
+	}
+
+	orchestrator := NewDiagnosisOrchestrator(registry, fakeAdapterFactory{}, 1)
+	report, err := orchestrator.ExecuteComparison(DiagnosisRequest{
+		URL: "https://example.com",
+		ProxyConfig: check.ProxyConfig{
+			Type: check.ProxyTypeHTTP,
+			Host: "proxy.local",
+			Port: 8080,
+		},
+		Timeout: time.Second,
+	})
+	if err != nil {
+		t.Fatalf("ExecuteComparison returned error: %v", err)
+	}
+
+	if report.DirectReport.RequestMetadata.ProxyType != check.ProxyTypeDirect {
+		t.Fatalf("direct report used proxy type %s", report.DirectReport.RequestMetadata.ProxyType)
+	}
+	if report.ProxyReport.RequestMetadata.ProxyType != check.ProxyTypeHTTP {
+		t.Fatalf("proxy report used proxy type %s", report.ProxyReport.RequestMetadata.ProxyType)
+	}
+	if len(report.Differences) == 0 {
+		t.Fatal("expected comparison differences")
+	}
+
+	foundIPDiff := false
+	for _, diff := range report.Differences {
+		if diff.CheckID == "public_ip" && diff.Field == "ip_address" {
+			foundIPDiff = true
+			break
+		}
+	}
+	if !foundIPDiff {
+		t.Fatalf("expected public_ip ip_address diff, got %#v", report.Differences)
+	}
+}
+
+func TestExecuteComparisonRequiresProxy(t *testing.T) {
+	orchestrator := NewDiagnosisOrchestrator(NewCheckRegistry(), fakeAdapterFactory{}, 1)
+	_, err := orchestrator.ExecuteComparison(DiagnosisRequest{
+		URL:         "https://example.com",
+		ProxyConfig: check.ProxyConfig{Type: check.ProxyTypeDirect},
+	})
+	if err == nil {
+		t.Fatal("expected error for direct-only comparison")
+	}
+}
+
+type proxyAwareCheck struct{}
+
+func (proxyAwareCheck) ID() string {
+	return "public_ip"
+}
+
+func (proxyAwareCheck) Name() string {
+	return "Public IP Detection"
+}
+
+func (proxyAwareCheck) Description() string {
+	return "detects public IP"
+}
+
+func (proxyAwareCheck) Category() check.CheckCategory {
+	return check.CategoryNetwork
+}
+
+func (proxyAwareCheck) DependsOn() []string {
+	return nil
+}
+
+func (proxyAwareCheck) Execute(ctx check.ExecutionContext) check.CheckResult {
+	ip := "203.0.113.10"
+	if ctx.GetProxyConfig().Type != check.ProxyTypeDirect {
+		ip = "198.51.100.20"
+	}
+
+	result := check.NewCheckResult("public_ip", check.CategoryNetwork)
+	result.WithStatus(check.StatusPassed, check.SeverityInfo).
+		WithConfidence(1).
+		WithExplanation(fmt.Sprintf("Public IP detected: %s", ip)).
+		AddEvidence("ip_address", ip)
+	return *result
+}
+
+type fakeAdapterFactory struct{}
+
+func (fakeAdapterFactory) CreateAdapter(check.ProxyType, check.ProxyConfig) check.NetworkAdapter {
+	return fakeNetworkAdapter{}
+}
+
+type fakeNetworkAdapter struct{}
+
+func (fakeNetworkAdapter) Type() check.ProxyType {
+	return check.ProxyTypeDirect
+}
+
+func (fakeNetworkAdapter) ExecuteHTTPRequest(*check.HTTPRequest) (*check.HTTPResponse, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (fakeNetworkAdapter) FollowRedirects(string, int) ([]check.RedirectStep, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (fakeNetworkAdapter) ResolveDNS(string) ([]string, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (fakeNetworkAdapter) GetPublicIP() (string, error) {
+	return "", fmt.Errorf("not implemented")
+}
+
+func (fakeNetworkAdapter) TestPort(string, int, time.Duration) (bool, error) {
+	return false, fmt.Errorf("not implemented")
+}
+
+func (fakeNetworkAdapter) GetTLSCertificate(string) (*check.CertificateInfo, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (fakeNetworkAdapter) GetTLSCipherSuite(string) (string, error) {
+	return "", fmt.Errorf("not implemented")
+}
+
+func (fakeNetworkAdapter) GetTLSVersion(string) (string, error) {
+	return "", fmt.Errorf("not implemented")
 }

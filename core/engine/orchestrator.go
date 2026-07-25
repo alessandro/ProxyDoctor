@@ -10,37 +10,56 @@ import (
 
 // DiagnosisRequest represents the input for a diagnosis
 type DiagnosisRequest struct {
-	URL        string
+	URL         string
 	ProxyConfig check.ProxyConfig
-	CheckIDs   []string // empty = all checks
-	Timeout    time.Duration
+	CheckIDs    []string // empty = all checks
+	Timeout     time.Duration
 }
 
 // DiagnosisReport represents the final output report
 type DiagnosisReport struct {
-	ID                string               `json:"id"`
-	RequestMetadata   RequestMetadata      `json:"request_metadata"`
-	Results           []check.CheckResult  `json:"results"`
-	ExecutionTime     time.Duration        `json:"execution_time"`
-	ChecksExecuted    int                  `json:"checks_executed"`
-	ChecksFailed      int                  `json:"checks_failed"`
-	CriticalFindings  int                  `json:"critical_findings"`
-	WarningFindings   int                  `json:"warning_findings"`
+	ID               string              `json:"id"`
+	RequestMetadata  RequestMetadata     `json:"request_metadata"`
+	Results          []check.CheckResult `json:"results"`
+	ExecutionTime    time.Duration       `json:"execution_time"`
+	ChecksExecuted   int                 `json:"checks_executed"`
+	ChecksFailed     int                 `json:"checks_failed"`
+	CriticalFindings int                 `json:"critical_findings"`
+	WarningFindings  int                 `json:"warning_findings"`
+}
+
+// ComparisonReport contains direct and proxied diagnosis results plus their diff.
+type ComparisonReport struct {
+	ID            string                 `json:"id"`
+	URL           string                 `json:"url"`
+	DirectReport  *DiagnosisReport       `json:"direct_report"`
+	ProxyReport   *DiagnosisReport       `json:"proxy_report"`
+	Differences   []ComparisonDifference `json:"differences"`
+	ExecutionTime time.Duration          `json:"execution_time"`
+}
+
+// ComparisonDifference describes a field that changed between direct and proxied runs.
+type ComparisonDifference struct {
+	CheckID     string      `json:"check_id"`
+	Field       string      `json:"field"`
+	DirectValue interface{} `json:"direct_value"`
+	ProxyValue  interface{} `json:"proxy_value"`
+	Summary     string      `json:"summary"`
 }
 
 // RequestMetadata contains information about the diagnosis request
 type RequestMetadata struct {
-	URL              string          `json:"url"`
-	ProxyType        check.ProxyType `json:"proxy_type"`
-	StartedAt        time.Time       `json:"started_at"`
-	CompletedAt      time.Time       `json:"completed_at"`
-	UserAgent        string          `json:"user_agent,omitempty"`
+	URL         string          `json:"url"`
+	ProxyType   check.ProxyType `json:"proxy_type"`
+	StartedAt   time.Time       `json:"started_at"`
+	CompletedAt time.Time       `json:"completed_at"`
+	UserAgent   string          `json:"user_agent,omitempty"`
 }
 
 // DiagnosisOrchestrator orchestrates the execution of checks
 type DiagnosisOrchestrator struct {
-	registry  *CheckRegistry
-	adapters  AdapterFactory
+	registry   *CheckRegistry
+	adapters   AdapterFactory
 	maxWorkers int
 }
 
@@ -50,8 +69,8 @@ func NewDiagnosisOrchestrator(registry *CheckRegistry, adapters AdapterFactory, 
 		maxWorkers = 4
 	}
 	return &DiagnosisOrchestrator{
-		registry:  registry,
-		adapters:  adapters,
+		registry:   registry,
+		adapters:   adapters,
 		maxWorkers: maxWorkers,
 	}
 }
@@ -88,6 +107,133 @@ func (o *DiagnosisOrchestrator) Execute(req DiagnosisRequest) (*DiagnosisReport,
 	report := o.generateReport(req, results, startTime)
 
 	return report, nil
+}
+
+// ExecuteComparison runs the same diagnosis directly and through the configured proxy.
+func (o *DiagnosisOrchestrator) ExecuteComparison(req DiagnosisRequest) (*ComparisonReport, error) {
+	startTime := time.Now()
+	if req.ProxyConfig.Type == check.ProxyTypeDirect {
+		return nil, fmt.Errorf("comparison requires a proxy configuration")
+	}
+
+	directReq := req
+	directReq.ProxyConfig = check.ProxyConfig{Type: check.ProxyTypeDirect}
+
+	directReport, err := o.Execute(directReq)
+	if err != nil {
+		return nil, fmt.Errorf("direct diagnosis failed: %w", err)
+	}
+
+	proxyReport, err := o.Execute(req)
+	if err != nil {
+		return nil, fmt.Errorf("proxy diagnosis failed: %w", err)
+	}
+
+	return &ComparisonReport{
+		ID:            fmt.Sprintf("compare_%d", time.Now().Unix()),
+		URL:           req.URL,
+		DirectReport:  directReport,
+		ProxyReport:   proxyReport,
+		Differences:   CompareReports(directReport, proxyReport),
+		ExecutionTime: time.Since(startTime),
+	}, nil
+}
+
+// CompareReports returns user-facing differences between direct and proxied reports.
+func CompareReports(directReport, proxyReport *DiagnosisReport) []ComparisonDifference {
+	if directReport == nil || proxyReport == nil {
+		return nil
+	}
+
+	proxyResults := make(map[string]check.CheckResult, len(proxyReport.Results))
+	for _, result := range proxyReport.Results {
+		proxyResults[result.ID] = result
+	}
+
+	differences := make([]ComparisonDifference, 0)
+	for _, directResult := range directReport.Results {
+		proxyResult, ok := proxyResults[directResult.ID]
+		if !ok {
+			differences = append(differences, ComparisonDifference{
+				CheckID:     directResult.ID,
+				Field:       "result",
+				DirectValue: "present",
+				ProxyValue:  "missing",
+				Summary:     fmt.Sprintf("%s ran directly but not through the proxy", directResult.ID),
+			})
+			continue
+		}
+
+		differences = appendResultDifferences(differences, directResult, proxyResult)
+	}
+
+	directResults := make(map[string]check.CheckResult, len(directReport.Results))
+	for _, result := range directReport.Results {
+		directResults[result.ID] = result
+	}
+	for _, proxyResult := range proxyReport.Results {
+		if _, ok := directResults[proxyResult.ID]; !ok {
+			differences = append(differences, ComparisonDifference{
+				CheckID:     proxyResult.ID,
+				Field:       "result",
+				DirectValue: "missing",
+				ProxyValue:  "present",
+				Summary:     fmt.Sprintf("%s ran through the proxy but not directly", proxyResult.ID),
+			})
+		}
+	}
+
+	return differences
+}
+
+func appendResultDifferences(
+	differences []ComparisonDifference,
+	directResult check.CheckResult,
+	proxyResult check.CheckResult,
+) []ComparisonDifference {
+	if directResult.Status != proxyResult.Status {
+		differences = append(differences, ComparisonDifference{
+			CheckID:     directResult.ID,
+			Field:       "status",
+			DirectValue: directResult.Status,
+			ProxyValue:  proxyResult.Status,
+			Summary:     fmt.Sprintf("%s status changed from %s to %s", directResult.ID, directResult.Status, proxyResult.Status),
+		})
+	}
+
+	if directResult.Severity != proxyResult.Severity {
+		differences = append(differences, ComparisonDifference{
+			CheckID:     directResult.ID,
+			Field:       "severity",
+			DirectValue: directResult.Severity,
+			ProxyValue:  proxyResult.Severity,
+			Summary:     fmt.Sprintf("%s severity changed from %s to %s", directResult.ID, directResult.Severity, proxyResult.Severity),
+		})
+	}
+
+	if directIP, ok := directResult.Evidence["ip_address"]; ok {
+		if proxyIP, ok := proxyResult.Evidence["ip_address"]; ok && directIP != proxyIP {
+			differences = append(differences, ComparisonDifference{
+				CheckID:     directResult.ID,
+				Field:       "ip_address",
+				DirectValue: directIP,
+				ProxyValue:  proxyIP,
+				Summary:     fmt.Sprintf("%s IP changed from %v to %v", directResult.ID, directIP, proxyIP),
+			})
+		}
+	}
+
+	if directResult.ExecutionTime != proxyResult.ExecutionTime {
+		differences = append(differences, ComparisonDifference{
+			CheckID:     directResult.ID,
+			Field:       "execution_time",
+			DirectValue: directResult.ExecutionTime,
+			ProxyValue:  proxyResult.ExecutionTime,
+			Summary:     fmt.Sprintf("%s latency changed by %s", directResult.ID, proxyResult.ExecutionTime-directResult.ExecutionTime),
+		})
+	}
+
+	return differences
 }
 
 func (o *DiagnosisOrchestrator) validateRequest(req DiagnosisRequest) error {
@@ -185,13 +331,13 @@ func (o *DiagnosisOrchestrator) generateReport(
 	report := &DiagnosisReport{
 		ID: fmt.Sprintf("diag_%d", time.Now().Unix()),
 		RequestMetadata: RequestMetadata{
-			URL:       req.URL,
-			ProxyType: req.ProxyConfig.Type,
-			StartedAt: startTime,
+			URL:         req.URL,
+			ProxyType:   req.ProxyConfig.Type,
+			StartedAt:   startTime,
 			CompletedAt: time.Now(),
 		},
-		Results:       results,
-		ExecutionTime: time.Since(startTime),
+		Results:        results,
+		ExecutionTime:  time.Since(startTime),
 		ChecksExecuted: len(results),
 	}
 
