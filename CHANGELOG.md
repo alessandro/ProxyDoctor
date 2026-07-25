@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.2.1 - 2026-07-25
+
+### Added
+- Fork/PR timeline chart (`images/forks-prs-timeline.svg`) and repo stats badges to README.
+
+### Changed
+- Centralized default checks registration into a single `core/checks.RegisterDefaults()` function (`core/checks/register.go`). CLI and server now import one function instead of 4 individual check constructors.
+- Removed duplicate registration boilerplate from `cmd/cli/commands/diagnose.go`, `cmd/cli/commands/diagnose_test.go`, and `cmd/server/main.go`.
+
 ## v0.2.0 - 2025-07-25
 
 ### Added
