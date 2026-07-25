@@ -6,10 +6,7 @@ import (
 	"testing"
 	"time"
 
-	dnsresolve "github.com/francomano/proxydoctor/core/checks/dns_resolve"
-	portscan "github.com/francomano/proxydoctor/core/checks/port_scan"
-	publicip "github.com/francomano/proxydoctor/core/checks/public_ip"
-	tlscert "github.com/francomano/proxydoctor/core/checks/tls_cert"
+	checkspkg "github.com/francomano/proxydoctor/core/checks"
 	"github.com/francomano/proxydoctor/core/check"
 	"github.com/francomano/proxydoctor/core/engine"
 )
@@ -179,10 +176,7 @@ func TestFormatComparisonOutputsNoDifferences(t *testing.T) {
 
 func newTestRegistry() *engine.CheckRegistry {
 	registry := engine.NewCheckRegistry()
-	registry.Register(publicip.NewPublicIPCheck())
-	registry.Register(dnsresolve.NewDNSResolveCheck())
-	registry.Register(tlscert.NewTLSCertCheck())
-	registry.Register(portscan.NewPortScanCheck())
+	checkspkg.RegisterDefaults(registry)
 	return registry
 }
 

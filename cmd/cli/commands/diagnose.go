@@ -13,10 +13,7 @@ import (
 
 	"github.com/francomano/proxydoctor/core/adapters"
 	"github.com/francomano/proxydoctor/core/check"
-	dnsresolve "github.com/francomano/proxydoctor/core/checks/dns_resolve"
-	portscan "github.com/francomano/proxydoctor/core/checks/port_scan"
-	publicip "github.com/francomano/proxydoctor/core/checks/public_ip"
-	tlscert "github.com/francomano/proxydoctor/core/checks/tls_cert"
+	checkspkg "github.com/francomano/proxydoctor/core/checks"
 	"github.com/francomano/proxydoctor/core/engine"
 	"github.com/francomano/proxydoctor/core/utils"
 )
@@ -88,10 +85,7 @@ func runDiagnose(cmd *cobra.Command, args []string) error {
 	}
 
 	registry := engine.NewCheckRegistry()
-	registry.Register(publicip.NewPublicIPCheck())
-	registry.Register(dnsresolve.NewDNSResolveCheck())
-	registry.Register(tlscert.NewTLSCertCheck())
-	registry.Register(portscan.NewPortScanCheck())
+	checkspkg.RegisterDefaults(registry)
 
 	checkIDs, err := parseCheckFilters(checks, registry)
 	if err != nil {

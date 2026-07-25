@@ -8,10 +8,7 @@ import (
 
 	"github.com/francomano/proxydoctor/core/adapters"
 	"github.com/francomano/proxydoctor/core/engine"
-	dnsresolve "github.com/francomano/proxydoctor/core/checks/dns_resolve"
-	portscan "github.com/francomano/proxydoctor/core/checks/port_scan"
-	publicip "github.com/francomano/proxydoctor/core/checks/public_ip"
-	tlscert "github.com/francomano/proxydoctor/core/checks/tls_cert"
+	checkspkg "github.com/francomano/proxydoctor/core/checks"
 	"github.com/francomano/proxydoctor/core/utils"
 )
 
@@ -20,10 +17,7 @@ import (
 // they land in core/checks/.
 func newRegistry() *engine.CheckRegistry {
 	registry := engine.NewCheckRegistry()
-	registry.Register(publicip.NewPublicIPCheck())
-	registry.Register(dnsresolve.NewDNSResolveCheck())
-	registry.Register(tlscert.NewTLSCertCheck())
-	registry.Register(portscan.NewPortScanCheck())
+	checkspkg.RegisterDefaults(registry)
 	return registry
 }
 
