@@ -3,6 +3,9 @@
 **A minimal, testable Go tool for running network diagnostics through proxies**
 
 [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
+[![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![Good First Issue](https://img.shields.io/badge/good%20first-issue-brightgreen.svg)](https://github.com/francomano/ProxyDoctor/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+[![Go](https://img.shields.io/badge/Go-1.25+-00ADD8.svg?logo=go)](https://go.dev/)
 
 <p align="center">
   <img src="images/proxydoctor-logo.png" alt="ProxyDoctor Logo" width="150">
@@ -185,6 +188,16 @@ The CLI and GUI accept proxy URLs in multiple formats:
 | `host:port` + type | `77.245.76.107:1080` + `--proxy-type socks5` | Requires explicit type |
 | `host` + type | `77.245.76.107` + `--proxy-type socks5` | Uses default port (1080 for SOCKS, 8080 for HTTP) |
 | With auth | `socks5://user:pass@host:port` | Credentials extracted from URL |
+
+## Contributing
+
+Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) for details on how to get started.
+
+- 🐛 [Report a Bug](https://github.com/francomano/ProxyDoctor/issues/new?template=bug_report.md)
+- ✨ [Request a Feature](https://github.com/francomano/ProxyDoctor/issues/new?template=feature_request.md)
+- 💡 [Good First Issues](https://github.com/francomano/ProxyDoctor/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+
+Please read our [Code of Conduct](CODE_OF_CONDUCT.md) before contributing.
 
 ## Known Issues / Limitations
 
