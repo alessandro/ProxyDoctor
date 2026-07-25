@@ -1,0 +1,6 @@
+bin/
+.git/
+.github/
+*.md
+LICENSE
+coverage.out

@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	checkspkg "github.com/francomano/proxydoctor/core/checks"
 	"github.com/francomano/proxydoctor/core/check"
+	checkspkg "github.com/francomano/proxydoctor/core/checks"
 	"github.com/francomano/proxydoctor/core/engine"
 )
 

@@ -14,9 +14,11 @@ func NewTLSCertCheck() check.Checker {
 	return &TLSCertCheck{}
 }
 
-func (c *TLSCertCheck) ID() string         { return "tls_certificate" }
-func (c *TLSCertCheck) Name() string        { return "TLS Certificate" }
-func (c *TLSCertCheck) Description() string { return "Checks the TLS certificate of the target (validity, issuer, expiry, cipher suite, TLS version)" }
+func (c *TLSCertCheck) ID() string   { return "tls_certificate" }
+func (c *TLSCertCheck) Name() string { return "TLS Certificate" }
+func (c *TLSCertCheck) Description() string {
+	return "Checks the TLS certificate of the target (validity, issuer, expiry, cipher suite, TLS version)"
+}
 func (c *TLSCertCheck) Category() check.CheckCategory { return check.CategoryTLS }
 func (c *TLSCertCheck) DependsOn() []string           { return []string{} }
 

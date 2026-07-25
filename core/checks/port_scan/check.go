@@ -14,9 +14,11 @@ func NewPortScanCheck() check.Checker {
 	return &PortScanCheck{}
 }
 
-func (c *PortScanCheck) ID() string         { return "port_connectivity" }
-func (c *PortScanCheck) Name() string        { return "Port Connectivity" }
-func (c *PortScanCheck) Description() string { return "Tests TCP connectivity to common ports (80, 443, 8080, 8443) on the target host" }
+func (c *PortScanCheck) ID() string   { return "port_connectivity" }
+func (c *PortScanCheck) Name() string { return "Port Connectivity" }
+func (c *PortScanCheck) Description() string {
+	return "Tests TCP connectivity to common ports (80, 443, 8080, 8443) on the target host"
+}
 func (c *PortScanCheck) Category() check.CheckCategory { return check.CategoryNetwork }
 func (c *PortScanCheck) DependsOn() []string           { return []string{} }
 

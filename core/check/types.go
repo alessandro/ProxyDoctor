@@ -36,18 +36,18 @@ const (
 
 // CheckResult contains the standardized result of a check
 type CheckResult struct {
-	ID              string                 `json:"id"`
-	Category        CheckCategory          `json:"category"`
-	Status          Status                 `json:"status"`
-	Severity        Severity               `json:"severity"`
-	Confidence      float64                `json:"confidence"`                // 0.0-1.0
-	Evidence        map[string]interface{} `json:"evidence"`                  // Raw collected data
-	Explanation     string                 `json:"explanation"`               // Human-readable
-	ProbableCauses  []string               `json:"probable_causes,omitempty"` // Why did it fail?
+	ID               string                 `json:"id"`
+	Category         CheckCategory          `json:"category"`
+	Status           Status                 `json:"status"`
+	Severity         Severity               `json:"severity"`
+	Confidence       float64                `json:"confidence"`                  // 0.0-1.0
+	Evidence         map[string]interface{} `json:"evidence"`                    // Raw collected data
+	Explanation      string                 `json:"explanation"`                 // Human-readable
+	ProbableCauses   []string               `json:"probable_causes,omitempty"`   // Why did it fail?
 	SuggestedActions []string               `json:"suggested_actions,omitempty"` // What to do?
-	References      []string               `json:"references,omitempty"`      // URLs to docs
-	ExecutionTime   time.Duration          `json:"execution_time"`
-	Timestamp       time.Time              `json:"timestamp"`
+	References       []string               `json:"references,omitempty"`        // URLs to docs
+	ExecutionTime    time.Duration          `json:"execution_time"`
+	Timestamp        time.Time              `json:"timestamp"`
 }
 
 // Checker is the interface every check must implement
@@ -97,12 +97,12 @@ type ProxyConfig struct {
 type ProxyType string
 
 const (
-	ProxyTypeDirect  ProxyType = "direct"
-	ProxyTypeHTTP    ProxyType = "http"
-	ProxyTypeHTTPS   ProxyType = "https"
-	ProxyTypeSOCKS4  ProxyType = "socks4"
-	ProxyTypeSOCKS5  ProxyType = "socks5"
-	ProxyTypeVPN     ProxyType = "vpn"
+	ProxyTypeDirect ProxyType = "direct"
+	ProxyTypeHTTP   ProxyType = "http"
+	ProxyTypeHTTPS  ProxyType = "https"
+	ProxyTypeSOCKS4 ProxyType = "socks4"
+	ProxyTypeSOCKS5 ProxyType = "socks5"
+	ProxyTypeVPN    ProxyType = "vpn"
 )
 
 // NetworkAdapter abstracts different network connection types

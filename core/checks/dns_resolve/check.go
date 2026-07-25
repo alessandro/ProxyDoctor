@@ -14,9 +14,11 @@ func NewDNSResolveCheck() check.Checker {
 	return &DNSResolveCheck{}
 }
 
-func (c *DNSResolveCheck) ID() string         { return "dns_resolve" }
-func (c *DNSResolveCheck) Name() string        { return "DNS Resolution" }
-func (c *DNSResolveCheck) Description() string { return "Resolves the target hostname to IP addresses through the current connection" }
+func (c *DNSResolveCheck) ID() string   { return "dns_resolve" }
+func (c *DNSResolveCheck) Name() string { return "DNS Resolution" }
+func (c *DNSResolveCheck) Description() string {
+	return "Resolves the target hostname to IP addresses through the current connection"
+}
 func (c *DNSResolveCheck) Category() check.CheckCategory { return check.CategoryNetwork }
 func (c *DNSResolveCheck) DependsOn() []string           { return []string{} }
 

@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/francomano/proxydoctor/core/adapters"
-	"github.com/francomano/proxydoctor/core/engine"
 	checkspkg "github.com/francomano/proxydoctor/core/checks"
+	"github.com/francomano/proxydoctor/core/engine"
 	"github.com/francomano/proxydoctor/core/utils"
 )
 
