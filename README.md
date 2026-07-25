@@ -62,8 +62,9 @@ ProxyDoctor is a CLI-first tool to:
 - ✅ 4 built-in checks: public_ip, dns_resolve, tls_certificate, port_connectivity
 - ✅ `--export json` and `--export markdown` (working)
 - ✅ Unit tests (6 passing tests, engine coverage)
+- ✅ Plugin system (CheckPlugin, ExportPlugin, MiddlewarePlugin interfaces)
 - 🔲 More checks (DNS leak, WebRTC leak, geolocation, IP reputation planned)
-- 🔲 Plugin system (scaffolding in place, not functional)
+- 🔲 Community plugins (MPC server, Prometheus metrics, custom reports)
 
 ## Requirements
 
@@ -165,6 +166,34 @@ curl -X POST http://localhost:8080/api/diagnose \
 go test -v ./...
 ```
 
+## Plugin System
+
+ProxyDoctor has a plugin system for extending functionality. Plugins can add new checks, export formats, or intercept diagnosis via middleware.
+
+```go
+import "github.com/francomano/proxydoctor/core/plugin"
+
+// Create a plugin that adds checks
+type MyPlugin struct{}
+
+func (p *MyPlugin) ID() string          { return "my-plugin" }
+func (p *MyPlugin) Name() string        { return "My Plugin" }
+func (p *MyPlugin) Version() string     { return "0.1.0" }
+func (p *MyPlugin) Description() string { return "Adds custom checks" }
+func (p *MyPlugin) Init(_ *plugin.Context) error { return nil }
+func (p *MyPlugin) Shutdown() error     { return nil }
+func (p *MyPlugin) RegisterChecks(r *engine.CheckRegistry) error {
+    r.Register(myNewCheck())
+    return nil
+}
+
+// Register the plugin
+mgr := plugin.NewManager()
+mgr.Register(&MyPlugin{}, &plugin.Context{Registry: registry})
+```
+
+Plugin interfaces: `CheckPlugin`, `ExportPlugin`, `MiddlewarePlugin`.
+
 ## File Structure
 
 ```
@@ -177,8 +206,9 @@ ProxyDoctor/
 ├── core/
 │   ├── engine/           ← Orchestration engine (tests included)
 │   ├── check/            ← Result types and interfaces (tests included)
-│   ├── adapters/         ← Proxy implementations (Direct, HTTP, HTTPS, SOCKS4, SOCKS5)
 │   ├── checks/           ← Diagnostic checks (public_ip, dns_resolve, tls_cert, port_scan)
+│   ├── adapters/         ← Proxy implementations (Direct, HTTP, HTTPS, SOCKS4, SOCKS5)
+│   ├── plugin/           ← Plugin system (CheckPlugin, ExportPlugin, MiddlewarePlugin)
 │   └── utils/            ← Shared helpers (proxy URL parsing)
 ├── go.mod, go.sum        ← Go modules
 ├── README.md
