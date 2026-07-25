@@ -7,7 +7,7 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/francomano/ProxyDoctor.svg)](https://pkg.go.dev/github.com/francomano/ProxyDoctor)
 [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 [![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg)](CONTRIBUTING.md)
-[![Go](https://img.shields.io/badge/Go-1.22+-00ADD8.svg?logo=go)](https://go.dev/)
+[![Go](https://img.shields.io/badge/Go-1.25+-00ADD8.svg?logo=go)](https://go.dev/)
 
 <p align="center">
   <img src="images/proxydoctor-logo.png" alt="ProxyDoctor Logo" width="150">
