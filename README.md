@@ -208,6 +208,20 @@ Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md)
 
 Please read our [Code of Conduct](CODE_OF_CONDUCT.md) before contributing.
 
+## Project Activity
+
+<p align="center">
+  <img src="images/forks-prs-timeline.svg" alt="Forks & Pull Requests Timeline" width="700">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/github/stars/francomano/ProxyDoctor?style=flat-square&color=yellow&label=Stars" alt="Stars">
+  <img src="https://img.shields.io/github/forks/francomano/ProxyDoctor?style=flat-square&color=green&label=Forks" alt="Forks">
+  <img src="https://img.shields.io/github/issues/francomano/ProxyDoctor?style=flat-square&color=red&label=Issues" alt="Issues">
+  <img src="https://img.shields.io/github/pulls/francomano/ProxyDoctor?style=flat-square&color=purple&label=PRs" alt="Pull Requests">
+  <img src="https://img.shields.io/github/last-commit/francomano/ProxyDoctor?style=flat-square&color=blue" alt="Last Commit">
+</p>
+
 ## Known Issues / Limitations
 
 - DNS leak, WebRTC leak, geolocation, and IP reputation checks are planned but not yet implemented.
