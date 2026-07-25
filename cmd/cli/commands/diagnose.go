@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -26,6 +28,7 @@ var (
 	output    string
 	compare   bool
 	timeout   string
+	checks    string
 )
 
 const (
@@ -64,6 +67,7 @@ func init() {
 	diagnoseCmd.Flags().StringVarP(&output, "output", "o", "", "Output file (empty = stdout)")
 	diagnoseCmd.Flags().BoolVar(&compare, "compare", false, "Compare with direct connection")
 	diagnoseCmd.Flags().StringVar(&timeout, "timeout", engine.DefaultDiagnosisTimeout.String(), "Diagnosis timeout (1s to 5m, e.g., 10s, 2m)")
+	diagnoseCmd.Flags().StringVar(&checks, "checks", "", "Comma-separated check IDs or categories to run (empty/all = all checks)")
 
 	diagnoseCmd.MarkFlagRequired("url")
 }
@@ -92,6 +96,12 @@ func runDiagnose(cmd *cobra.Command, args []string) error {
 	registry.Register(tlscert.NewTLSCertCheck())
 	registry.Register(portscan.NewPortScanCheck())
 
+	checkIDs, err := parseCheckFilters(checks, registry)
+	if err != nil {
+		fmt.Printf("❌ Invalid checks: %v\n", err)
+		return err
+	}
+
 	// Create adapter factory
 	adapterFactory := adapters.NewAdapterFactory()
 
@@ -102,10 +112,14 @@ func runDiagnose(cmd *cobra.Command, args []string) error {
 	diagRequest := engine.DiagnosisRequest{
 		URL:         url,
 		ProxyConfig: proxyConfig,
+		CheckIDs:    checkIDs,
 		Timeout:     diagnosisTimeout,
 	}
 
 	fmt.Printf("📋 Running diagnosis for: %s\n", url)
+	if len(checkIDs) > 0 {
+		fmt.Printf("🧪 Checks: %s\n", strings.Join(checkIDs, ", "))
+	}
 	if proxyConfig.Type != check.ProxyTypeDirect {
 		fmt.Printf("🔗 Via proxy: %s://%s:%d\n", proxyConfig.Type, proxyConfig.Host, proxyConfig.Port)
 	}
@@ -145,6 +159,68 @@ func parseDiagnosisTimeout(value string) (time.Duration, error) {
 	}
 
 	return parsed, nil
+}
+
+func parseCheckFilters(value string, registry *engine.CheckRegistry) ([]string, error) {
+	value = strings.TrimSpace(value)
+	if value == "" || strings.EqualFold(value, "all") {
+		return nil, nil
+	}
+
+	availableChecks := registry.ListChecks()
+	selected := make(map[string]struct{})
+	var checkIDs []string
+
+	for _, raw := range strings.Split(value, ",") {
+		filter := strings.TrimSpace(raw)
+		if filter == "" {
+			continue
+		}
+
+		if _, ok := registry.GetCheck(filter); ok {
+			if _, seen := selected[filter]; !seen {
+				selected[filter] = struct{}{}
+				checkIDs = append(checkIDs, filter)
+			}
+			continue
+		}
+
+		categoryMatched := false
+		category := check.CheckCategory(filter)
+		for id, checker := range availableChecks {
+			if checker.Category() != category {
+				continue
+			}
+			categoryMatched = true
+			if _, seen := selected[id]; !seen {
+				selected[id] = struct{}{}
+				checkIDs = append(checkIDs, id)
+			}
+		}
+		if categoryMatched {
+			continue
+		}
+
+		return nil, fmt.Errorf("unknown check ID or category %q (available: %s)", filter, availableCheckFilters(availableChecks))
+	}
+
+	sort.Strings(checkIDs)
+	return checkIDs, nil
+}
+
+func availableCheckFilters(checks map[string]check.Checker) string {
+	values := make(map[string]struct{}, len(checks))
+	for id, checker := range checks {
+		values[id] = struct{}{}
+		values[string(checker.Category())] = struct{}{}
+	}
+
+	labels := make([]string, 0, len(values))
+	for value := range values {
+		labels = append(labels, value)
+	}
+	sort.Strings(labels)
+	return strings.Join(labels, ", ")
 }
 
 func formatResults(report *engine.DiagnosisReport, format string, outPath string) error {

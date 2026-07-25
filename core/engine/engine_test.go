@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"sort"
 	"testing"
 	"time"
 
@@ -223,5 +224,69 @@ func TestExecuteAppliesDefaultTimeout(t *testing.T) {
 	}
 	if report.RequestMetadata.Timeout != DefaultDiagnosisTimeout {
 		t.Errorf("default timeout not applied: got %v, want %v", report.RequestMetadata.Timeout, DefaultDiagnosisTimeout)
+	}
+}
+
+func TestGetChecksToRunFiltersSelectedIDs(t *testing.T) {
+	registry := NewCheckRegistry()
+	registry.Register(newTestCheck("public_ip"))
+	registry.Register(newTestCheck("dns_resolve"))
+	registry.Register(newTestCheck("tls_certificate"))
+
+	orchestrator := NewDiagnosisOrchestrator(registry, adapters.NewAdapterFactory(), 2)
+
+	checksToRun, err := orchestrator.getChecksToRun([]string{"dns_resolve", "public_ip"})
+	if err != nil {
+		t.Fatalf("getChecksToRun returned error: %v", err)
+	}
+
+	got := make([]string, 0, len(checksToRun))
+	for id := range checksToRun {
+		got = append(got, id)
+	}
+	sort.Strings(got)
+
+	want := []string{"dns_resolve", "public_ip"}
+	if len(got) != len(want) {
+		t.Fatalf("selected %d checks, want %d: %v", len(got), len(want), got)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("selected checks mismatch: got %v, want %v", got, want)
+		}
+	}
+}
+
+func TestGetChecksToRunRejectsUnknownID(t *testing.T) {
+	registry := NewCheckRegistry()
+	registry.Register(newTestCheck("public_ip"))
+
+	orchestrator := NewDiagnosisOrchestrator(registry, adapters.NewAdapterFactory(), 2)
+
+	if _, err := orchestrator.getChecksToRun([]string{"missing_check"}); err == nil {
+		t.Fatal("expected an error for an unknown check ID")
+	}
+}
+
+type testCheck struct {
+	id string
+}
+
+func newTestCheck(id string) testCheck {
+	return testCheck{id: id}
+}
+
+func (c testCheck) ID() string                    { return c.id }
+func (c testCheck) Name() string                  { return c.id }
+func (c testCheck) Description() string           { return "test check" }
+func (c testCheck) Category() check.CheckCategory { return check.CategoryNetwork }
+func (c testCheck) DependsOn() []string           { return nil }
+func (c testCheck) Execute(ctx check.ExecutionContext) check.CheckResult {
+	return check.CheckResult{
+		ID:         c.id,
+		Category:   c.Category(),
+		Status:     check.StatusPassed,
+		Severity:   check.SeverityInfo,
+		Confidence: 1,
 	}
 }
