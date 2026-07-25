@@ -173,8 +173,9 @@ func TestExecutionContext(t *testing.T) {
 	}
 }
 
-func TestGenerateReportIncludesTimeout(t *testing.T) {
+func TestExecutePropagatesCustomTimeout(t *testing.T) {
 	registry := NewCheckRegistry()
+	registry.Register(publicip.NewPublicIPCheck())
 	adapterFactory := adapters.NewAdapterFactory()
 	orchestrator := NewDiagnosisOrchestrator(registry, adapterFactory, 2)
 
@@ -187,9 +188,40 @@ func TestGenerateReportIncludesTimeout(t *testing.T) {
 		Timeout: timeout,
 	}
 
-	report := orchestrator.generateReport(request, nil, time.Now())
-
+	report, err := orchestrator.Execute(request)
+	if err != nil {
+		t.Logf("Execute returned error (expected in test env): %v", err)
+	}
+	if report == nil {
+		t.Fatal("report should not be nil when error is non-fatal")
+	}
 	if report.RequestMetadata.Timeout != timeout {
-		t.Errorf("Timeout mismatch: got %v, want %v", report.RequestMetadata.Timeout, timeout)
+		t.Errorf("custom timeout not propagated: got %v, want %v", report.RequestMetadata.Timeout, timeout)
+	}
+}
+
+func TestExecuteAppliesDefaultTimeout(t *testing.T) {
+	registry := NewCheckRegistry()
+	registry.Register(publicip.NewPublicIPCheck())
+	adapterFactory := adapters.NewAdapterFactory()
+	orchestrator := NewDiagnosisOrchestrator(registry, adapterFactory, 2)
+
+	request := DiagnosisRequest{
+		URL: "https://example.com",
+		ProxyConfig: check.ProxyConfig{
+			Type: check.ProxyTypeDirect,
+		},
+		Timeout: 0, // not set
+	}
+
+	report, err := orchestrator.Execute(request)
+	if err != nil {
+		t.Logf("Execute returned error (expected in test env): %v", err)
+	}
+	if report == nil {
+		t.Fatal("report should not be nil when error is non-fatal")
+	}
+	if report.RequestMetadata.Timeout != DefaultDiagnosisTimeout {
+		t.Errorf("default timeout not applied: got %v, want %v", report.RequestMetadata.Timeout, DefaultDiagnosisTimeout)
 	}
 }

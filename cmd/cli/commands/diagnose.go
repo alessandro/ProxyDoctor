@@ -29,9 +29,8 @@ var (
 )
 
 const (
-	defaultDiagnosisTimeout = 30 * time.Second
-	minDiagnosisTimeout     = time.Second
-	maxDiagnosisTimeout     = 5 * time.Minute
+	minDiagnosisTimeout = time.Second
+	maxDiagnosisTimeout = 5 * time.Minute
 )
 
 // RootCmd is the main command
@@ -64,7 +63,7 @@ func init() {
 	diagnoseCmd.Flags().StringVarP(&exportFmt, "export", "e", "text", "Export format: text, json, html, markdown")
 	diagnoseCmd.Flags().StringVarP(&output, "output", "o", "", "Output file (empty = stdout)")
 	diagnoseCmd.Flags().BoolVar(&compare, "compare", false, "Compare with direct connection")
-	diagnoseCmd.Flags().StringVar(&timeout, "timeout", defaultDiagnosisTimeout.String(), "Diagnosis timeout (1s to 5m, e.g., 10s, 2m)")
+	diagnoseCmd.Flags().StringVar(&timeout, "timeout", engine.DefaultDiagnosisTimeout.String(), "Diagnosis timeout (1s to 5m, e.g., 10s, 2m)")
 
 	diagnoseCmd.MarkFlagRequired("url")
 }
@@ -131,7 +130,7 @@ func runDiagnose(cmd *cobra.Command, args []string) error {
 
 func parseDiagnosisTimeout(value string) (time.Duration, error) {
 	if value == "" {
-		return defaultDiagnosisTimeout, nil
+		return engine.DefaultDiagnosisTimeout, nil
 	}
 
 	parsed, err := time.ParseDuration(value)

@@ -3,6 +3,8 @@ package commands
 import (
 	"testing"
 	"time"
+
+	"github.com/francomano/proxydoctor/core/engine"
 )
 
 func TestParseDiagnosisTimeout(t *testing.T) {
@@ -15,7 +17,7 @@ func TestParseDiagnosisTimeout(t *testing.T) {
 		{
 			name:  "empty uses default",
 			value: "",
-			want:  defaultDiagnosisTimeout,
+			want:  engine.DefaultDiagnosisTimeout,
 		},
 		{
 			name:  "seconds",

@@ -38,6 +38,9 @@ type RequestMetadata struct {
 	UserAgent        string          `json:"user_agent,omitempty"`
 }
 
+// DefaultDiagnosisTimeout is the fallback timeout when none is specified.
+const DefaultDiagnosisTimeout = 30 * time.Second
+
 // DiagnosisOrchestrator orchestrates the execution of checks
 type DiagnosisOrchestrator struct {
 	registry  *CheckRegistry
@@ -66,7 +69,7 @@ func (o *DiagnosisOrchestrator) Execute(req DiagnosisRequest) (*DiagnosisReport,
 		return nil, err
 	}
 	if req.Timeout == 0 {
-		req.Timeout = 30 * time.Second
+		req.Timeout = DefaultDiagnosisTimeout
 	}
 
 	// Get checks to execute
