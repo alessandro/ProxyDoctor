@@ -16,7 +16,7 @@ import (
 )
 
 // newRegistry builds a check registry with every built-in check registered.
-// Currently only public_ip is implemented; more checks get added here as
+// more checks get added here as
 // they land in core/checks/.
 func newRegistry() *engine.CheckRegistry {
 	registry := engine.NewCheckRegistry()

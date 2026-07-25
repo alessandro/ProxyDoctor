@@ -131,6 +131,9 @@ curl -X POST http://localhost:8080/api/diagnose \
 # Run diagnostics through a SOCKS5 proxy (bare host:port + type)
 ./run.sh cli diagnose --url https://example.com --proxy 127.0.0.1:1080 --proxy-type socks5
 
+# Compare direct and proxied diagnosis results
+./run.sh cli diagnose --url https://example.com --proxy socks5://127.0.0.1:1080 --compare
+
 # Export results as JSON
 ./run.sh cli diagnose --url https://example.com --export json --output report.json
 ```
@@ -207,6 +210,4 @@ Please read our [Code of Conduct](CODE_OF_CONDUCT.md) before contributing.
 
 ## Known Issues / Limitations
 
-- `--export html` flag is accepted but silently falls back to text output (html formatter not implemented).
-- `--compare` flag is declared but not yet wired into the diagnosis execution.
 - DNS leak, WebRTC leak, geolocation, and IP reputation checks are planned but not yet implemented.

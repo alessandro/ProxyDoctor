@@ -26,7 +26,6 @@ out/
 
 # Go
 vendor/
-go.sum
 
 # Environment
 .env
