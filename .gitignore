@@ -5,6 +5,8 @@
 *.so
 *.so.*
 *.dylib
+/cli
+/server
 /bin
 /dist
 
