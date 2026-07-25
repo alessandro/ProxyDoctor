@@ -27,6 +27,8 @@ Include:
 - **Assessment** within 1 week
 - **Fix or mitigation** released as soon as possible
 
+Contact: francomano on GitHub
+
 ## Security Considerations
 
 ProxyDoctor handles sensitive data including:

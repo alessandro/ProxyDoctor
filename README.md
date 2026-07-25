@@ -13,6 +13,10 @@
   <img src="images/proxydoctor-logo.png" alt="ProxyDoctor Logo" width="150">
 </p>
 
+<p align="center">
+  <img src="images/proxydoctor-demo.gif" alt="ProxyDoctor CLI Demo" width="750">
+</p>
+
 > **Built with AI assistance** — This project was developed and documented with contributions from:
 > - **GitHub Copilot** (Auto Mode, inline suggestions)
 > - **OpenCode** with free open-source models (big-pickle / opencode models)
@@ -48,7 +52,7 @@ ProxyDoctor is a CLI-first tool to:
 
 ## Project Status
 
-**v0.2.0 (Alpha)**
+**v0.2.1 (Alpha)**
 - ✅ Core engine with check registry and dependency DAG
 - ✅ CLI with diagnose and list-checks commands
 - ✅ HTTP/HTTPS proxy support in `diagnose --proxy`
@@ -93,6 +97,10 @@ open http://localhost:8080
 ```
 
 Fill in the URL (and optionally a proxy + proxy type), hit "Run diagnosis" — it runs the same `core/engine.DiagnosisOrchestrator` the CLI uses and renders the results as cards.
+
+<p align="center">
+  <img src="images/gui.png" alt="ProxyDoctor Web GUI" width="750">
+</p>
 
 Two JSON endpoints back the GUI, and can be called directly:
 

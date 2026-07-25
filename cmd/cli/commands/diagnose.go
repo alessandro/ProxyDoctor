@@ -40,6 +40,22 @@ var RootCmd = &cobra.Command{
 	Short: "ProxyDoctor - Comprehensive proxy diagnostics tool",
 	Long: `ProxyDoctor is a command-line tool for comprehensive proxy diagnostics.
 It analyzes connectivity through proxies and identifies issues.`,
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		if cmd.Name() != "diagnose" {
+			return
+		}
+		fmt.Println()
+		fmt.Println("  ██▓███ ▓██   ██▓ ██░ ██  ▄▄▄       ▄████▄   ██ ▄█▀ ▒█████   ███▄ ▄███▓")
+		fmt.Println(" ▓██░  ██▒▒██  ██▒▓██░ ██▒▒████▄    ▒██▀ ▀█   ██▄█▒ ▒██▒  ██▒▓██▒▀█▀ ██▒")
+		fmt.Println(" ▓██░ ██▓▒ ▒██ ██░▒██▀▀██░▒██  ▀█▄  ▒▓█    ▄ ▓███▄░ ▒██░  ██▒▓██    ▓██░")
+		fmt.Println(" ▒██▄█▓▒ ▒ ░▓█▄██║░▓█ ░██ ░██▄▄▄▄██ ▒▓▓▄ ▄██▒▓██ █▄ ▒██   ██░▒██    ▒██ ")
+		fmt.Println(" ▒██▒ ░  ░ ░▒█████▓░▓█▒░██▓ ▓█   ▓██▒▒ ▓███▀ ░▒██▒ █▄░ ████▓▒░▒██▒   ░██▒")
+		fmt.Println(" ▒▓▒░ ░  ░ ▒▒▓  ▒ ░▒ ░░▒░▒ ▒▒   ▓▒█░░ ░▒ ▒  ░▒ ▒▒ ▓▒░ ▒░▒░▒░ ░ ▒░   ░  ░")
+		fmt.Println()
+		fmt.Println("  by Marco Francomano — github.com/francomano/ProxyDoctor")
+		fmt.Println("  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+		fmt.Println()
+	},
 }
 
 // diagnoseCmd is the main diagnose command
