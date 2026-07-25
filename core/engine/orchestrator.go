@@ -66,7 +66,10 @@ func (o *DiagnosisOrchestrator) Execute(req DiagnosisRequest) (*DiagnosisReport,
 	}
 
 	// Get checks to execute
-	checksToRun := o.getChecksToRun(req.CheckIDs)
+	checksToRun, err := o.getChecksToRun(req.CheckIDs)
+	if err != nil {
+		return nil, err
+	}
 	if len(checksToRun) == 0 {
 		return nil, fmt.Errorf("no checks to execute")
 	}
@@ -100,18 +103,20 @@ func (o *DiagnosisOrchestrator) validateRequest(req DiagnosisRequest) error {
 	return nil
 }
 
-func (o *DiagnosisOrchestrator) getChecksToRun(checkIDs []string) map[string]check.Checker {
+func (o *DiagnosisOrchestrator) getChecksToRun(checkIDs []string) (map[string]check.Checker, error) {
 	if len(checkIDs) == 0 {
-		return o.registry.ListChecks()
+		return o.registry.ListChecks(), nil
 	}
 
 	result := make(map[string]check.Checker)
 	for _, id := range checkIDs {
-		if c, ok := o.registry.GetCheck(id); ok {
-			result[id] = c
+		c, ok := o.registry.GetCheck(id)
+		if !ok {
+			return nil, fmt.Errorf("unknown check ID %q", id)
 		}
+		result[id] = c
 	}
-	return result
+	return result, nil
 }
 
 func (o *DiagnosisOrchestrator) buildDependencyGraph(checks map[string]check.Checker) DependencyDAG {
