@@ -25,6 +25,13 @@ var (
 	exportFmt string
 	output    string
 	compare   bool
+	timeout   string
+)
+
+const (
+	defaultDiagnosisTimeout = 30 * time.Second
+	minDiagnosisTimeout     = time.Second
+	maxDiagnosisTimeout     = 5 * time.Minute
 )
 
 // RootCmd is the main command
@@ -57,6 +64,7 @@ func init() {
 	diagnoseCmd.Flags().StringVarP(&exportFmt, "export", "e", "text", "Export format: text, json, html, markdown")
 	diagnoseCmd.Flags().StringVarP(&output, "output", "o", "", "Output file (empty = stdout)")
 	diagnoseCmd.Flags().BoolVar(&compare, "compare", false, "Compare with direct connection")
+	diagnoseCmd.Flags().StringVar(&timeout, "timeout", defaultDiagnosisTimeout.String(), "Diagnosis timeout (1s to 5m, e.g., 10s, 2m)")
 
 	diagnoseCmd.MarkFlagRequired("url")
 }
@@ -64,6 +72,12 @@ func init() {
 func runDiagnose(cmd *cobra.Command, args []string) error {
 	fmt.Printf("🔍 ProxyDoctor v0.1 - Proxy Diagnostics Tool\n")
 	fmt.Printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n")
+
+	diagnosisTimeout, err := parseDiagnosisTimeout(timeout)
+	if err != nil {
+		fmt.Printf("❌ Invalid timeout: %v\n", err)
+		return err
+	}
 
 	// Parse proxy configuration
 	proxyConfig, err := utils.ParseProxyConfig(proxyStr, proxyType)
@@ -89,7 +103,7 @@ func runDiagnose(cmd *cobra.Command, args []string) error {
 	diagRequest := engine.DiagnosisRequest{
 		URL:         url,
 		ProxyConfig: proxyConfig,
-		Timeout:     30 * time.Second,
+		Timeout:     diagnosisTimeout,
 	}
 
 	fmt.Printf("📋 Running diagnosis for: %s\n", url)
@@ -113,6 +127,25 @@ func runDiagnose(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+func parseDiagnosisTimeout(value string) (time.Duration, error) {
+	if value == "" {
+		return defaultDiagnosisTimeout, nil
+	}
+
+	parsed, err := time.ParseDuration(value)
+	if err != nil {
+		return 0, fmt.Errorf("must be a valid duration such as 10s, 5m, or 1h: %w", err)
+	}
+	if parsed < minDiagnosisTimeout {
+		return 0, fmt.Errorf("must be at least %s", minDiagnosisTimeout)
+	}
+	if parsed > maxDiagnosisTimeout {
+		return 0, fmt.Errorf("must be at most %s", maxDiagnosisTimeout)
+	}
+
+	return parsed, nil
 }
 
 func formatResults(report *engine.DiagnosisReport, format string, outPath string) error {

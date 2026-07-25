@@ -116,6 +116,9 @@ curl -X POST http://localhost:8080/api/diagnose \
 # Run diagnostics (direct connection)
 ./run.sh cli diagnose --url https://example.com
 
+# Run diagnostics with a custom timeout
+./run.sh cli diagnose --url https://example.com --timeout 10s
+
 # Run diagnostics through an HTTP proxy
 ./run.sh cli diagnose --url https://example.com --proxy http://127.0.0.1:3128 --proxy-type http
 

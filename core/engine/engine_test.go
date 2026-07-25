@@ -172,3 +172,24 @@ func TestExecutionContext(t *testing.T) {
 		t.Error("Should not be cancelled initially")
 	}
 }
+
+func TestGenerateReportIncludesTimeout(t *testing.T) {
+	registry := NewCheckRegistry()
+	adapterFactory := adapters.NewAdapterFactory()
+	orchestrator := NewDiagnosisOrchestrator(registry, adapterFactory, 2)
+
+	timeout := 45 * time.Second
+	request := DiagnosisRequest{
+		URL: "https://example.com",
+		ProxyConfig: check.ProxyConfig{
+			Type: check.ProxyTypeDirect,
+		},
+		Timeout: timeout,
+	}
+
+	report := orchestrator.generateReport(request, nil, time.Now())
+
+	if report.RequestMetadata.Timeout != timeout {
+		t.Errorf("Timeout mismatch: got %v, want %v", report.RequestMetadata.Timeout, timeout)
+	}
+}

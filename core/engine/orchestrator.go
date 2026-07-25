@@ -32,6 +32,7 @@ type DiagnosisReport struct {
 type RequestMetadata struct {
 	URL              string          `json:"url"`
 	ProxyType        check.ProxyType `json:"proxy_type"`
+	Timeout          time.Duration   `json:"timeout"`
 	StartedAt        time.Time       `json:"started_at"`
 	CompletedAt      time.Time       `json:"completed_at"`
 	UserAgent        string          `json:"user_agent,omitempty"`
@@ -64,6 +65,9 @@ func (o *DiagnosisOrchestrator) Execute(req DiagnosisRequest) (*DiagnosisReport,
 	if err := o.validateRequest(req); err != nil {
 		return nil, err
 	}
+	if req.Timeout == 0 {
+		req.Timeout = 30 * time.Second
+	}
 
 	// Get checks to execute
 	checksToRun := o.getChecksToRun(req.CheckIDs)
@@ -93,9 +97,6 @@ func (o *DiagnosisOrchestrator) Execute(req DiagnosisRequest) (*DiagnosisReport,
 func (o *DiagnosisOrchestrator) validateRequest(req DiagnosisRequest) error {
 	if req.URL == "" {
 		return fmt.Errorf("URL is required")
-	}
-	if req.Timeout == 0 {
-		req.Timeout = 30 * time.Second
 	}
 	return nil
 }
@@ -187,6 +188,7 @@ func (o *DiagnosisOrchestrator) generateReport(
 		RequestMetadata: RequestMetadata{
 			URL:       req.URL,
 			ProxyType: req.ProxyConfig.Type,
+			Timeout:   req.Timeout,
 			StartedAt: startTime,
 			CompletedAt: time.Now(),
 		},
